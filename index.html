@@ -71,26 +71,26 @@
                 
                 <form id="bookingForm" onsubmit="handleBooking(event)" class="space-y-4">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-    <div class="space-y-4">
-        <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Nama Peminjam</label>
-            <input type="text" id="empName" required class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Contoh: Lita Fitri Violieta">
-        </div>
-        <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">No. WhatsApp Peminjam</label>
-            <input type="tel" id="empWa" class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Contoh: 08123456789">
-        </div>
-    </div>
-    <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Pilih Mobil</label>
-        <select id="carSelect" class="w-full border rounded-lg p-2 bg-white">
-            <option value="Hyundai - B 1201 DZQ">Hyundai Stargazer (Merah)</option>
-            <option value="Hyundai - B 1219 DZQ">Hyundai Stargazer (Abu)</option>
-            <option value="Honda - L 1903 JR">Honda BRV (Putih)</option>
-        </select>
-    </div>
-</div>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Nama Peminjam</label>
+                                <input type="text" id="empName" required class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Contoh: Lita Fitri Violieta">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">No. WhatsApp Peminjam</label>
+                                <input type="tel" id="empWa" class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Contoh: 08123456789">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Pilih Mobil</label>
+                            <select id="carSelect" class="w-full border rounded-lg p-2 bg-white">
+                                <option value="Hyundai - B 1201 DZQ">Hyundai Stargazer (Merah)</option>
+                                <option value="Hyundai - B 1219 DZQ">Hyundai Stargazer (Abu)</option>
+                                <option value="Honda - L 1903 JR">Honda BRV (Putih)</option>
+                            </select>
+                        </div>
+                    </div>
+                    
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Tanggal</label>
@@ -139,271 +139,248 @@
     </div>
 
     <script>
-       // --- Masukkan URL Web App Google Script di sini ---
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwzx5awewsWoBxbZZZPRksoF8at2eECyqYbzhfmQpJcHj2DQGCHg2ZkhTSyIB3V91N6/exec';
+        // --- MASUKKAN URL WEB APP GOOGLE SCRIPT DI SINI ---
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwzx5awewsWoBxbZZZPRksoF8at2eECyqYbzhfmQpJcHj2DQGCHg2ZkhTSyIB3V91N6/exec'; 
 
-// --- Data & State ---
-let isAdmin = false;
-let bookings = [];
+        // --- Data & State ---
+        let isAdmin = false;
+        let bookings = [];
+        const today = new Date();
+        let currentMonth = today.getMonth();
+        let currentYear = today.getFullYear();
 
-// --- Inisialisasi ---
-const today = new Date();
-let currentMonth = today.getMonth();
-let currentYear = today.getFullYear();
-
-document.addEventListener('DOMContentLoaded', () => {
-    setupYearSelect();
-    document.getElementById('monthSelect').value = currentMonth;
-    document.getElementById('yearSelect').value = currentYear;
-    
-    // Tampilkan loading & ambil data dari Google Sheets
-    document.getElementById('calendarGrid').innerHTML = "<div class='col-span-7 text-center py-4 text-blue-600'><i class='fas fa-spinner fa-spin'></i> Memuat data...</div>";
-    fetchBookings();
-});
-
-// --- API Logic (Koneksi ke Google Sheets) ---
-async function fetchBookings() {
-    try {
-        const response = await fetch(SCRIPT_URL);
-        bookings = await response.json();
-        updateCalendar();
-        renderBookingList();
-    } catch (error) {
-        console.error('Error fetching data:', error);
-        alert('Gagal memuat data dari database.');
-    }
-}
-
-async function saveBookingToDatabase(bookingData) {
-    try {
-        await fetch(SCRIPT_URL, {
-            method: 'POST',
-            body: JSON.stringify({ action: 'add', ...bookingData })
+        document.addEventListener('DOMContentLoaded', () => {
+            setupYearSelect();
+            document.getElementById('monthSelect').value = currentMonth;
+            document.getElementById('yearSelect').value = currentYear;
+            
+            // Tampilkan loading screen
+            document.getElementById('calendarGrid').innerHTML = "<div class='col-span-7 text-center py-4 text-blue-600 font-bold'><i class='fas fa-spinner fa-spin'></i> Menghubungkan ke Database...</div>";
+            
+            if (SCRIPT_URL === 'URL_WEB_APP_KAMU_DISINI' || SCRIPT_URL === '') {
+                document.getElementById('calendarGrid').innerHTML = "<div class='col-span-7 text-center py-4 text-red-600 font-bold border border-red-200 bg-red-50 rounded'>⚠️ Masukkan URL Google Script terlebih dahulu di baris 126!</div>";
+            } else {
+                fetchBookings();
+            }
         });
-    } catch (error) {
-        console.error('Error saving:', error);
-    }
-}
 
-async function deleteBookingFromDatabase(id) {
-    try {
-        await fetch(SCRIPT_URL, {
-            method: 'POST',
-            body: JSON.stringify({ action: 'delete', id: id })
-        });
-    } catch (error) {
-        console.error('Error deleting:', error);
-    }
-}
-
-// --- Calendar Logic ---
-function setupYearSelect() {
-    const select = document.getElementById('yearSelect');
-    for (let i = currentYear - 1; i <= currentYear + 3; i++) {
-        let opt = document.createElement('option');
-        opt.value = i;
-        opt.innerHTML = i;
-        select.appendChild(opt);
-    }
-}
-
-function updateCalendar() {
-    currentYear = parseInt(document.getElementById('yearSelect').value);
-    currentMonth = parseInt(document.getElementById('monthSelect').value);
-    
-    const firstDay = new Date(currentYear, currentMonth, 1).getDay();
-    const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-    
-    const calendarGrid = document.getElementById('calendarGrid');
-    calendarGrid.innerHTML = "";
-
-    for (let i = 0; i < firstDay; i++) calendarGrid.innerHTML += <div></div>;
-
-    for (let i = 1; i <= daysInMonth; i++) {
-        const dateStr = ${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(i).padStart(2, '0')};
-        const dayBookings = bookings.filter(b => b.date === dateStr);
-        
-        let bgClass = "bg-green-50 hover:bg-green-100 text-gray-700";
-        let borderClass = "border-gray-200";
-        
-        if (dayBookings.some(b => b.type === 'block')) {
-            bgClass = "bg-gray-800 text-white";
-            borderClass = "border-gray-800";
-        } else if (dayBookings.length >= 3) {
-            bgClass = "bg-red-100 text-red-700 font-bold";
-            borderClass = "border-red-300";
-        } else if (dayBookings.length > 0) {
-            bgClass = "bg-yellow-50 text-yellow-700";
-            borderClass = "border-yellow-300";
+        // --- API Logic (Koneksi ke Google Sheets) ---
+        async function fetchBookings() {
+            try {
+                const response = await fetch(SCRIPT_URL);
+                const textData = await response.text();
+                
+                // Pengecekan Error: Jika URL salah atau belum diset "Siapa Saja/Anyone"
+                if (textData.trim().startsWith('<')) {
+                    document.getElementById('calendarGrid').innerHTML = `
+                        <div class='col-span-7 text-center py-4 text-red-600 font-bold border border-red-200 bg-red-50 rounded p-2'>
+                           ⚠️ Akses Google Script Ditolak!<br>
+                           <span class='text-xs font-normal'>Pastikan saat deploy Google Script, opsi "Who has access" sudah dipilih "Anyone" / "Siapa saja".</span>
+                        </div>`;
+                    return;
+                }
+                
+                bookings = JSON.parse(textData);
+                updateCalendar();
+                renderBookingList();
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('calendarGrid').innerHTML = "<div class='col-span-7 text-center py-4 text-red-600 font-bold border border-red-200 bg-red-50 rounded'>❌ Gagal menarik data. Periksa koneksi atau URL Script.</div>";
+            }
         }
 
-        calendarGrid.innerHTML += `
-            <div onclick="selectDate('${dateStr}')" 
-                 class="h-10 md:h-14 flex flex-col justify-center items-center rounded cursor-pointer border ${borderClass} ${bgClass} transition text-xs md:text-sm relative">
-                <span>${i}</span>
-                ${dayBookings.length > 0 && !dayBookings.some(b => b.type === 'block') ? <span class="hidden md:block text-[9px] mt-1">${dayBookings.length} Booked</span> : ''}
-            </div>
-        `;
-    }
-}
-
-function selectDate(date) {
-    document.getElementById('bookDate').value = date;
-    window.scrollTo({ top: document.querySelector('#bookingForm').offsetTop - 100, behavior: 'smooth' });
-}
-
-// --- Booking Logic ---
-async function handleBooking(e) {
-    e.preventDefault();
-    
-    const btn = e.target.querySelector('button[type="submit"]');
-    btn.innerHTML = "<i class='fas fa-spinner fa-spin'></i> Memproses...";
-    btn.disabled = true;
-
-    const name = document.getElementById('empName').value;
-    const empWa = document.getElementById('empWa').value;
-    const car = document.getElementById('carSelect').value;
-    const date = document.getElementById('bookDate').value;
-    const start = document.getElementById('startTime').value;
-    const end = document.getElementById('endTime').value;
-    const isBlock = document.getElementById('adminControls') ? document.getElementById('isBlock').checked : false;
-
-    if (start >= end) {
-        alert("Jam selesai harus lebih akhir dari jam mulai!");
-        resetBtn(btn); return;
-    }
-
-    const conflict = bookings.find(b => 
-        b.date === date && 
-        b.car === car && 
-        ((start >= b.start && start < b.end) || (end > b.start && end <= b.end))
-    );
-
-    if (conflict && !isAdmin) { 
-        alert("Mobil ini sudah dibooking pada jam tersebut!");
-        resetBtn(btn); return;
-    }
-
-    const newBooking = {
-        id: Date.now().toString(),
-        name: isAdmin && isBlock ? "DIBLOKIR ADMIN" : name,
-        wa: empWa || "-",
-        car: isAdmin && isBlock ? "ALL CARS" : car,
-        date: date,
-        start: start,
-        end: end,
-        type: isAdmin && isBlock ? 'block' : 'booking'
-    };
-
-    // Update UI Lokal Langsung agar cepat
-    bookings.push(newBooking);
-    bookings.sort((a, b) => new Date(a.date) - new Date(b.date));
-    updateCalendar();
-    renderBookingList();
-
-    // Kirim data ke background database (Google Sheets)
-    await saveBookingToDatabase(newBooking);
-
-    sendWhatsAppNotification(newBooking.name, empWa, newBooking.car, newBooking.date, newBooking.start, newBooking.end, isBlock);
-
-    alert(isAdmin && isBlock ? "Tanggal berhasil diblokir!" : "Booking Berhasil!");
-    document.getElementById('bookingForm').reset();
-    resetBtn(btn);
-}
-
-function resetBtn(btn) {
-    btn.innerHTML = "Konfirmasi Booking";
-    btn.disabled = false;
-}
-
-async function deleteBooking(id) {
-    if(!confirm("Hapus booking ini?")) return;
-    
-    // Hapus dari UI lokal langsung
-    bookings = bookings.filter(b => b.id != id);
-    updateCalendar();
-    renderBookingList();
-    
-    // Hapus dari database (Google Sheets)
-    await deleteBookingFromDatabase(id);
-}
-
-// --- Sidebar Logic ---
-function renderBookingList() {
-    const list = document.getElementById('bookingList');
-    const search = document.getElementById('searchBook').value.toLowerCase();
-    const countSpan = document.getElementById('totalBookings');
-    
-    list.innerHTML = "";
-    const filtered = bookings.filter(b => b.name.toLowerCase().includes(search));
-    countSpan.innerText = filtered.length;
-
-    if (filtered.length === 0) {
-        list.innerHTML = <div class="text-center text-gray-400 mt-10">Tidak ada data</div>;
-        return;
-    }
-
-    filtered.forEach(b => {
-        const isBlock = b.type === 'block';
-        const cardColor = isBlock ? "bg-gray-800 text-gray-200" : "bg-white border-l-4 border-blue-500 text-gray-700";
-        
-        list.innerHTML += `
-            <div class="p-3 rounded shadow-sm ${cardColor} relative group text-sm">
-                <div class="font-bold flex justify-between">
-                    ${b.name}
-                    ${isAdmin ? <button onclick="deleteBooking('${b.id}')" class="text-red-500 hover:text-red-700"><i class="fas fa-trash"></i></button> : ''}
-                </div>
-                <div class="text-xs mt-1 opacity-80"><i class="fas fa-car mr-1"></i> ${b.car}</div>
-                <div class="text-xs mt-1 opacity-80 flex justify-between">
-                    <span><i class="far fa-calendar mr-1"></i> ${b.date}</span>
-                    <span><i class="far fa-clock mr-1"></i> ${b.start} - ${b.end}</span>
-                </div>
-            </div>
-        `;
-    });
-}
-
-// --- Admin Logic ---
-function toggleAdminMode() {
-    if (!isAdmin) {
-        const pass = prompt("Masukkan Password Admin:");
-        if (pass === "admin123") {
-            isAdmin = true;
-            document.getElementById('authBtn').innerHTML = <i class="fas fa-sign-out-alt"></i> Logout;
-            document.getElementById('authBtn').classList.replace('bg-blue-600', 'bg-red-600');
-            document.getElementById('adminControls').classList.remove('hidden');
-            alert("Login Admin Berhasil!");
-        } else {
-            alert("Password Salah!");
+        async function saveBookingToDatabase(bookingData) {
+            try {
+                await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: 'add', ...bookingData })
+                });
+            } catch (error) { console.error('Error saving:', error); }
         }
-    } else {
-        isAdmin = false;
-        document.getElementById('authBtn').innerHTML = <i class="fas fa-user-shield"></i> Login Admin;
-        document.getElementById('authBtn').classList.replace('bg-red-600', 'bg-blue-600');
-        document.getElementById('adminControls').classList.add('hidden');
-    }
-    renderBookingList();
-}
 
-// --- Fungsi Notifikasi WhatsApp ---
-function sendWhatsAppNotification(name, waNumber, car, date, start, end, isBlock) {
-    const adminWa = "085803993511"; 
-    const message = 🚗 *Notifikasi Car Booking* 🚗\n\n +
-                    *Nama Peminjam:* ${name}\n +
-                    *No. WA Peminjam:* ${waNumber || '-'}\n + 
-                    *Mobil:* ${car}\n +
-                    *Tanggal:* ${date}\n +
-                    *Waktu:* ${start} - ${end}\n\n +
-                    (isBlock ? ⚠️ *Status: TANGGAL DIBLOKIR ADMIN* : ✅ *Status: Booking Berhasil Dicatat*);
+        async function deleteBookingFromDatabase(id) {
+            try {
+                await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: 'delete', id: id })
+                });
+            } catch (error) { console.error('Error deleting:', error); }
+        }
 
-    let targetNumber = adminWa; 
-    targetNumber = targetNumber.replace(/\D/g, ''); 
-    if (targetNumber.startsWith('0')) {
-        targetNumber = '62' + targetNumber.substring(1);
-    }
-    window.open(https://wa.me/${targetNumber}?text=${encodeURIComponent(message)}, '_blank');
-}
+        // --- Calendar Logic ---
+        function setupYearSelect() {
+            const select = document.getElementById('yearSelect');
+            for (let i = currentYear - 1; i <= currentYear + 3; i++) {
+                let opt = document.createElement('option');
+                opt.value = i; opt.innerHTML = i; select.appendChild(opt);
+            }
+        }
 
+        function updateCalendar() {
+            currentYear = parseInt(document.getElementById('yearSelect').value);
+            currentMonth = parseInt(document.getElementById('monthSelect').value);
+            
+            const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+            const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+            const calendarGrid = document.getElementById('calendarGrid');
+            calendarGrid.innerHTML = "";
+
+            for (let i = 0; i < firstDay; i++) calendarGrid.innerHTML += `<div></div>`;
+
+            for (let i = 1; i <= daysInMonth; i++) {
+                const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
+                const dayBookings = bookings.filter(b => b.date === dateStr);
+                
+                let bgClass = "bg-green-50 hover:bg-green-100 text-gray-700";
+                let borderClass = "border-gray-200";
+                
+                if (dayBookings.some(b => b.type === 'block')) {
+                    bgClass = "bg-gray-800 text-white"; borderClass = "border-gray-800";
+                } else if (dayBookings.length >= 3) {
+                    bgClass = "bg-red-100 text-red-700 font-bold"; borderClass = "border-red-300";
+                } else if (dayBookings.length > 0) {
+                    bgClass = "bg-yellow-50 text-yellow-700"; borderClass = "border-yellow-300";
+                }
+
+                calendarGrid.innerHTML += `
+                    <div onclick="selectDate('${dateStr}')" 
+                         class="h-10 md:h-14 flex flex-col justify-center items-center rounded cursor-pointer border ${borderClass} ${bgClass} transition text-xs md:text-sm relative">
+                        <span>${i}</span>
+                        ${dayBookings.length > 0 && !dayBookings.some(b => b.type === 'block') ? `<span class="hidden md:block text-[9px] mt-1">${dayBookings.length} Booked</span>` : ''}
+                    </div>
+                `;
+            }
+        }
+
+        function selectDate(date) {
+            document.getElementById('bookDate').value = date;
+            window.scrollTo({ top: document.querySelector('#bookingForm').offsetTop - 100, behavior: 'smooth' });
+        }
+
+        // --- Booking Logic ---
+        async function handleBooking(e) {
+            e.preventDefault();
+            const btn = e.target.querySelector('button[type="submit"]');
+            btn.innerHTML = "<i class='fas fa-spinner fa-spin'></i> Memproses...";
+            btn.disabled = true;
+
+            const name = document.getElementById('empName').value;
+            const empWa = document.getElementById('empWa').value;
+            const car = document.getElementById('carSelect').value;
+            const date = document.getElementById('bookDate').value;
+            const start = document.getElementById('startTime').value;
+            const end = document.getElementById('endTime').value;
+            
+            const adminControls = document.getElementById('adminControls');
+            const isBlock = !adminControls.classList.contains('hidden') ? document.getElementById('isBlock').checked : false;
+
+            if (start >= end) {
+                alert("Jam selesai harus lebih akhir dari jam mulai!");
+                resetBtn(btn); return;
+            }
+
+            const conflict = bookings.find(b => b.date === date && b.car === car && ((start >= b.start && start < b.end) || (end > b.start && end <= b.end)));
+
+            if (conflict && !isAdmin) { 
+                alert("Mobil ini sudah dibooking pada jam tersebut!");
+                resetBtn(btn); return;
+            }
+
+            const newBooking = {
+                id: Date.now().toString(),
+                name: isAdmin && isBlock ? "DIBLOKIR ADMIN" : name,
+                wa: empWa || "-",
+                car: isAdmin && isBlock ? "ALL CARS" : car,
+                date: date,
+                start: start,
+                end: end,
+                type: isAdmin && isBlock ? 'block' : 'booking'
+            };
+
+            bookings.push(newBooking);
+            bookings.sort((a, b) => new Date(a.date) - new Date(b.date));
+            updateCalendar();
+            renderBookingList();
+
+            await saveBookingToDatabase(newBooking);
+            sendWhatsAppNotification(newBooking.name, empWa, newBooking.car, newBooking.date, newBooking.start, newBooking.end, isBlock);
+
+            alert(isAdmin && isBlock ? "Tanggal berhasil diblokir!" : "Booking Berhasil!");
+            document.getElementById('bookingForm').reset();
+            resetBtn(btn);
+        }
+
+        function resetBtn(btn) { btn.innerHTML = "Konfirmasi Booking"; btn.disabled = false; }
+
+        async function deleteBooking(id) {
+            if(!confirm("Hapus booking ini?")) return;
+            bookings = bookings.filter(b => b.id != id);
+            updateCalendar();
+            renderBookingList();
+            await deleteBookingFromDatabase(id);
+        }
+
+        // --- Sidebar Logic ---
+        function renderBookingList() {
+            const list = document.getElementById('bookingList');
+            const search = document.getElementById('searchBook').value.toLowerCase();
+            const countSpan = document.getElementById('totalBookings');
+            list.innerHTML = "";
+            const filtered = bookings.filter(b => b.name.toLowerCase().includes(search));
+            countSpan.innerText = filtered.length;
+
+            if (filtered.length === 0) {
+                list.innerHTML = `<div class="text-center text-gray-400 mt-10">Tidak ada data</div>`; return;
+            }
+
+            filtered.forEach(b => {
+                const isBlock = b.type === 'block';
+                const cardColor = isBlock ? "bg-gray-800 text-gray-200" : "bg-white border-l-4 border-blue-500 text-gray-700";
+                
+                list.innerHTML += `
+                    <div class="p-3 rounded shadow-sm ${cardColor} relative group text-sm">
+                        <div class="font-bold flex justify-between">
+                            ${b.name}
+                            ${isAdmin ? `<button onclick="deleteBooking('${b.id}')" class="text-red-500 hover:text-red-700"><i class="fas fa-trash"></i></button>` : ''}
+                        </div>
+                        <div class="text-xs mt-1 opacity-80"><i class="fas fa-car mr-1"></i> ${b.car}</div>
+                        <div class="text-xs mt-1 opacity-80 flex justify-between">
+                            <span><i class="far fa-calendar mr-1"></i> ${b.date}</span>
+                            <span><i class="far fa-clock mr-1"></i> ${b.start} - ${b.end}</span>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        // --- Admin Logic ---
+        function toggleAdminMode() {
+            if (!isAdmin) {
+                const pass = prompt("Masukkan Password Admin:");
+                if (pass === "admin123") {
+                    isAdmin = true;
+                    document.getElementById('authBtn').innerHTML = `<i class="fas fa-sign-out-alt"></i> Logout`;
+                    document.getElementById('authBtn').classList.replace('bg-blue-600', 'bg-red-600');
+                    document.getElementById('adminControls').classList.remove('hidden');
+                    alert("Login Admin Berhasil!");
+                } else { alert("Password Salah!"); }
+            } else {
+                isAdmin = false;
+                document.getElementById('authBtn').innerHTML = `<i class="fas fa-user-shield"></i> Login Admin`;
+                document.getElementById('authBtn').classList.replace('bg-red-600', 'bg-blue-600');
+                document.getElementById('adminControls').classList.add('hidden');
+            }
+            renderBookingList();
+        }
+
+        // --- Fungsi Notifikasi WA ---
+        function sendWhatsAppNotification(name, waNumber, car, date, start, end, isBlock) {
+            const adminWa = "085803993511"; 
+            const message = `🚗 *Notifikasi Car Booking* 🚗\n\n*Nama Peminjam:* ${name}\n*No. WA Peminjam:* ${waNumber || '-'}\n*Mobil:* ${car}\n*Tanggal:* ${date}\n*Waktu:* ${start} - ${end}\n\n` + (isBlock ? `⚠️ *Status: TANGGAL DIBLOKIR ADMIN*` : `✅ *Status: Booking Berhasil Dicatat*`);
+            let targetNumber = adminWa.replace(/\D/g, ''); 
+            if (targetNumber.startsWith('0')) targetNumber = '62' + targetNumber.substring(1);
+            window.open(`https://wa.me/${targetNumber}?text=${encodeURIComponent(message)}`, '_blank');
+        }
     </script>
 </body>
 </html>
