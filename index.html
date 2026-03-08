@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Booking Mobil Karyawan</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #888; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #555; }
+        
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+        }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans text-gray-800">
+
+    <nav class="bg-blue-800 text-white p-4 shadow-lg sticky top-0 z-50">
+        <div class="container mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-2">
+                <img class="h-10 md:h-12 w-auto object-contain bg-white p-1 rounded" src="./logo.png" alt="Logo DBL">
+                <h1 class="text-xl font-bold tracking-wide">Car Booking</h1>
+            </div>
+            <button id="authBtn" onclick="toggleAdminMode()" class="bg-blue-600 hover:bg-blue-500 px-4 py-2 rounded-lg text-sm transition shadow">
+                <i class="fas fa-user-shield mr-1"></i> Login Admin
+            </button>
+        </div>
+    </nav>
+
+    <div class="container mx-auto p-4 grid grid-cols-1 lg:grid-cols-3 gap-6 mt-4">
+
+        <div class="lg:col-span-2 space-y-6">
+            
+            <div class="bg-white p-6 rounded-xl shadow-md">
+                <div class="flex flex-col md:flex-row justify-between items-center mb-4 gap-4">
+                    <h2 class="text-2xl font-bold text-gray-700">Jadwal Ketersediaan</h2>
+                    <div class="flex gap-2">
+                        <select id="yearSelect" class="border rounded p-2 bg-gray-50" onchange="updateCalendar()"></select>
+                        <select id="monthSelect" class="border rounded p-2 bg-gray-50" onchange="updateCalendar()">
+                            <option value="0">Januari</option><option value="1">Februari</option><option value="2">Maret</option>
+                            <option value="3">April</option><option value="4">Mei</option><option value="5">Juni</option>
+                            <option value="6">Juli</option><option value="7">Agustus</option><option value="8">September</option>
+                            <option value="9">Oktober</option><option value="10">November</option><option value="11">Desember</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-7 gap-1 text-center mb-2 font-semibold text-gray-500">
+                    <div>Min</div><div>Sen</div><div>Sel</div><div>Rab</div><div>Kam</div><div>Jum</div><div>Sab</div>
+                </div>
+                <div id="calendarGrid" class="grid grid-cols-7 gap-1 text-center text-sm">
+                    </div>
+                
+                <div class="mt-4 flex gap-4 text-xs justify-center">
+                    <span class="flex items-center gap-1"><div class="w-3 h-3 bg-green-100 border border-green-500 rounded"></div> Tersedia</span>
+                    <span class="flex items-center gap-1"><div class="w-3 h-3 bg-red-100 border border-red-500 rounded"></div> Penuh</span>
+                    <span class="flex items-center gap-1"><div class="w-3 h-3 bg-gray-800 rounded"></div> Diblokir Admin</span>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-xl shadow-md border-l-4 border-blue-600">
+                <h3 class="text-xl font-bold mb-4 flex items-center gap-2">
+                    <i class="far fa-calendar-plus text-blue-600"></i> Form Booking Baru
+                </h3>
+                
+                <form id="bookingForm" onsubmit="handleBooking(event)" class="space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Nama Peminjam</label>
+                                <input type="text" id="empName" required class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Contoh: Lita Fitri Violieta">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">No. WhatsApp Peminjam</label>
+                                <input type="tel" id="empWa" class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Contoh: 08123456789">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Pilih Mobil</label>
+                            <select id="carSelect" class="w-full border rounded-lg p-2 bg-white">
+                                <option value="Hyundai - B 1201 DZQ">Hyundai Stargazer (Merah)</option>
+                                <option value="Hyundai - B 1219 DZQ">Hyundai Stargazer (Abu)</option>
+                                <option value="Honda - L 1903 JR">Honda BRV (Putih)</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Tanggal</label>
+                            <input type="date" id="bookDate" required class="w-full border rounded-lg p-2">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Jam Mulai</label>
+                            <input type="time" id="startTime" required class="w-full border rounded-lg p-2">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Jam Selesai</label>
+                            <input type="time" id="endTime" required class="w-full border rounded-lg p-2">
+                        </div>
+                    </div>
+
+                    <div id="adminControls" class="hidden p-3 bg-red-50 border border-red-200 rounded text-sm text-red-700">
+                        <label class="flex items-center gap-2">
+                            <input type="checkbox" id="isBlock" class="w-4 h-4 text-red-600">
+                            Mode Blokir Tanggal (Khusus Admin)
+                        </label>
+                    </div>
+
+                    <button type="submit" class="w-full bg-blue-700 hover:bg-blue-800 text-white font-bold py-3 rounded-lg shadow transition transform active:scale-95">
+                        Konfirmasi Booking
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <div class="lg:col-span-1">
+            <div class="bg-white p-4 rounded-xl shadow-md sticky top-24 h-[85vh] flex flex-col">
+                <h3 class="text-lg font-bold border-b pb-2 mb-2 flex justify-between items-center">
+                    <span><i class="fas fa-list-ul text-blue-500 mr-2"></i>Daftar Booking</span>
+                    <span class="text-xs bg-gray-200 px-2 py-1 rounded-full" id="totalBookings">0</span>
+                </h3>
+                
+                <div class="mb-2">
+                    <input type="text" id="searchBook" onkeyup="renderBookingList()" placeholder="Cari nama..." class="w-full text-sm p-2 border rounded">
+                </div>
+
+                <div id="bookingList" class="flex-1 overflow-y-auto space-y-3 pr-2">
+                    <div class="text-center text-gray-400 mt-10">Belum ada booking</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- MASUKKAN URL WEB APP GOOGLE SCRIPT DI SINI ---
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwzx5awewsWoBxbZZZPRksoF8at2eECyqYbzhfmQpJcHj2DQGCHg2ZkhTSyIB3V91N6/exec; 
+
+        // --- Data & State ---
+        let isAdmin = false;
+        let bookings = [];
+        const today = new Date();
+        let currentMonth = today.getMonth();
+        let currentYear = today.getFullYear();
+
+        document.addEventListener('DOMContentLoaded', () => {
+            setupYearSelect();
+            document.getElementById('monthSelect').value = currentMonth;
+            document.getElementById('yearSelect').value = currentYear;
+            
+            // Tampilkan loading screen
+            document.getElementById('calendarGrid').innerHTML = "<div class='col-span-7 text-center py-4 text-blue-600 font-bold'><i class='fas fa-spinner fa-spin'></i> Menghubungkan ke Database...</div>";
+            
+            if (SCRIPT_URL === 'URL_WEB_APP_KAMU_DISINI' || SCRIPT_URL === '') {
+                document.getElementById('calendarGrid').innerHTML = "<div class='col-span-7 text-center py-4 text-red-600 font-bold border border-red-200 bg-red-50 rounded'>⚠️ Masukkan URL Google Script terlebih dahulu di baris 126!</div>";
+            } else {
+                fetchBookings();
+            }
+        });
+
+        // --- API Logic (Koneksi ke Google Sheets) ---
+        async function fetchBookings() {
+            try {
+                const response = await fetch(SCRIPT_URL);
+                const textData = await response.text();
+                
+                // Pengecekan Error: Jika URL salah atau belum diset "Siapa Saja/Anyone"
+                if (textData.trim().startsWith('<')) {
+                    document.getElementById('calendarGrid').innerHTML = `
+                        <div class='col-span-7 text-center py-4 text-red-600 font-bold border border-red-200 bg-red-50 rounded p-2'>
+                           ⚠️ Akses Google Script Ditolak!<br>
+                           <span class='text-xs font-normal'>Pastikan saat deploy Google Script, opsi "Who has access" sudah dipilih "Anyone" / "Siapa saja".</span>
+                        </div>`;
+                    return;
+                }
+                
+                bookings = JSON.parse(textData);
+                updateCalendar();
+                renderBookingList();
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('calendarGrid').innerHTML = "<div class='col-span-7 text-center py-4 text-red-600 font-bold border border-red-200 bg-red-50 rounded'>❌ Gagal menarik data. Periksa koneksi atau URL Script.</div>";
+            }
+        }
+
+        async function saveBookingToDatabase(bookingData) {
+            try {
+                await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: 'add', ...bookingData })
+                });
+            } catch (error) { console.error('Error saving:', error); }
+        }
+
+        async function deleteBookingFromDatabase(id) {
+            try {
+                await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: 'delete', id: id })
+                });
+            } catch (error) { console.error('Error deleting:', error); }
+        }
+
+        // --- Calendar Logic ---
+        function setupYearSelect() {
+            const select = document.getElementById('yearSelect');
+            for (let i = currentYear - 1; i <= currentYear + 3; i++) {
+                let opt = document.createElement('option');
+                opt.value = i; opt.innerHTML = i; select.appendChild(opt);
+            }
+        }
+
+        function updateCalendar() {
+            currentYear = parseInt(document.getElementById('yearSelect').value);
+            currentMonth = parseInt(document.getElementById('monthSelect').value);
+            
+            const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+            const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+            const calendarGrid = document.getElementById('calendarGrid');
+
