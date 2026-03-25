@@ -71,19 +71,25 @@
                 
                 <form id="bookingForm" onsubmit="handleBooking(event)" class="space-y-4">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div class="space-y-4">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Nama Peminjam</label>
-                                <input type="text" id="empName" required class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Contoh: Lita Fitri Violieta">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">No. WhatsApp Peminjam</label>
-                                <input type="tel" id="empWa" class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Contoh: 08123456789">
-                            </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Nama Peminjam</label>
+                            <select id="empName" required class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+                                <option value="" disabled selected>-- Memuat Data... --</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Divisi</label>
+                            <select id="empDivisi" required class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+                                <option value="" disabled selected>-- Memuat Data... --</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">No. WhatsApp</label>
+                            <input type="tel" id="empWa" class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Contoh: 08123456789">
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Pilih Mobil</label>
-                            <select id="carSelect" class="w-full border rounded-lg p-2 bg-white">
+                            <select id="carSelect" class="w-full border rounded-lg p-2 bg-white focus:ring-2 focus:ring-blue-500 outline-none">
                                 <option value="Hyundai - B 1201 DZQ">Hyundai Stargazer (Merah)</option>
                                 <option value="Hyundai - B 1219 DZQ">Hyundai Stargazer (Abu)</option>
                                 <option value="Honda - L 1903 JR">Honda BRV (Putih)</option>
@@ -138,6 +144,27 @@
         </div>
     </div>
 
+    <div id="bookingModal" class="hidden fixed inset-0 bg-black bg-opacity-60 z-[100] flex justify-center items-center p-4 backdrop-blur-sm transition-opacity">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col max-h-[85vh] transform transition-all">
+            <div class="bg-blue-800 text-white p-4 flex justify-between items-center shadow-md">
+                <h3 class="font-bold text-lg" id="modalTitle">Detail Booking</h3>
+                <button onclick="closeModal()" class="text-white hover:text-red-300 font-bold text-2xl leading-none">&times;</button>
+            </div>
+            
+            <div id="modalContent" class="p-5 overflow-y-auto flex-1 space-y-3 bg-gray-50">
+                </div>
+            
+            <div class="p-4 border-t bg-white flex justify-end gap-2">
+                <button onclick="closeModal()" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold px-4 py-2 rounded-lg shadow-sm transition">
+                    Tutup
+                </button>
+                <button onclick="goToBookingForm()" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-lg shadow-sm transition flex items-center gap-2">
+                    <i class="far fa-calendar-check"></i> Booking Disini
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script>
         // --- MASUKKAN URL WEB APP GOOGLE SCRIPT DI SINI ---
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzsEqesmX1KQ6IXLAtjzZ46Cyc2eu4zJIQCnhGcCpJlujPbG7RbH3r-JznHIZR6IJbV/exec'; 
@@ -148,6 +175,7 @@
         const today = new Date();
         let currentMonth = today.getMonth();
         let currentYear = today.getFullYear();
+        let selectedDateForBooking = "";
 
         document.addEventListener('DOMContentLoaded', () => {
             setupYearSelect();
@@ -157,11 +185,7 @@
             // Tampilkan loading screen
             document.getElementById('calendarGrid').innerHTML = "<div class='col-span-7 text-center py-4 text-blue-600 font-bold'><i class='fas fa-spinner fa-spin'></i> Menghubungkan ke Database...</div>";
             
-            if (SCRIPT_URL === 'URL_WEB_APP_KAMU_DISINI' || SCRIPT_URL === '') {
-                document.getElementById('calendarGrid').innerHTML = "<div class='col-span-7 text-center py-4 text-red-600 font-bold border border-red-200 bg-red-50 rounded'>⚠️ Masukkan URL Google Script terlebih dahulu di baris 126!</div>";
-            } else {
-                fetchBookings();
-            }
+            fetchBookings();
         });
 
         // --- API Logic (Koneksi ke Google Sheets) ---
@@ -170,23 +194,46 @@
                 const response = await fetch(SCRIPT_URL);
                 const textData = await response.text();
                 
-                // Pengecekan Error: Jika URL salah atau belum diset "Siapa Saja/Anyone"
                 if (textData.trim().startsWith('<')) {
                     document.getElementById('calendarGrid').innerHTML = `
                         <div class='col-span-7 text-center py-4 text-red-600 font-bold border border-red-200 bg-red-50 rounded p-2'>
-                           ⚠️ Akses Google Script Ditolak!<br>
-                           <span class='text-xs font-normal'>Pastikan saat deploy Google Script, opsi "Who has access" sudah dipilih "Anyone" / "Siapa saja".</span>
+                            ⚠️ Akses Google Script Ditolak!
                         </div>`;
                     return;
                 }
                 
-                bookings = JSON.parse(textData);
+                const parsedData = JSON.parse(textData);
+                
+                // Cek apakah data pakai struktur baru {bookings: [], karyawan: [], divisi: []}
+                if (Array.isArray(parsedData)) {
+                    // Jika Apps Script belum diupdate, jalankan mode lama
+                    bookings = parsedData;
+                } else {
+                    // Apps Script sudah menggunakan mode baru dengan data nama & divisi
+                    bookings = parsedData.bookings || [];
+                    
+                    // Isi dropdown Nama Karyawan
+                    populateDropdown('empName', parsedData.karyawan || [], '-- Pilih Nama --');
+                    
+                    // Isi dropdown Divisi
+                    populateDropdown('empDivisi', parsedData.divisi || [], '-- Pilih Divisi --');
+                }
+
                 updateCalendar();
                 renderBookingList();
             } catch (error) {
                 console.error('Error:', error);
                 document.getElementById('calendarGrid').innerHTML = "<div class='col-span-7 text-center py-4 text-red-600 font-bold border border-red-200 bg-red-50 rounded'>❌ Gagal menarik data. Periksa koneksi atau URL Script.</div>";
             }
+        }
+
+        // Fungsi bantuan untuk mengisi dropdown otomatis
+        function populateDropdown(elementId, dataArray, defaultText) {
+            const select = document.getElementById(elementId);
+            select.innerHTML = `<option value="" disabled selected>${defaultText}</option>`;
+            dataArray.forEach(item => {
+                select.innerHTML += `<option value="${item}">${item}</option>`;
+            });
         }
 
         async function saveBookingToDatabase(bookingData) {
@@ -235,11 +282,11 @@
                 let borderClass = "border-gray-200";
                 
                 if (dayBookings.some(b => b.type === 'block')) {
-                    bgClass = "bg-gray-800 text-white"; borderClass = "border-gray-800";
+                    bgClass = "bg-gray-800 text-white hover:bg-gray-700"; borderClass = "border-gray-800";
                 } else if (dayBookings.length >= 3) {
-                    bgClass = "bg-red-100 text-red-700 font-bold"; borderClass = "border-red-300";
+                    bgClass = "bg-red-100 text-red-700 font-bold hover:bg-red-200"; borderClass = "border-red-300";
                 } else if (dayBookings.length > 0) {
-                    bgClass = "bg-yellow-50 text-yellow-700"; borderClass = "border-yellow-300";
+                    bgClass = "bg-yellow-50 text-yellow-700 hover:bg-yellow-100"; borderClass = "border-yellow-300";
                 }
 
                 calendarGrid.innerHTML += `
@@ -252,8 +299,61 @@
             }
         }
 
+        // --- FUNGSI POP UP ---
         function selectDate(date) {
-            document.getElementById('bookDate').value = date;
+            selectedDateForBooking = date;
+            const dayBookings = bookings.filter(b => b.date === date);
+            
+            const dateObj = new Date(date);
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            document.getElementById('modalTitle').innerText = dateObj.toLocaleDateString('id-ID', options);
+            
+            const modalContent = document.getElementById('modalContent');
+            modalContent.innerHTML = "";
+            
+            if (dayBookings.length === 0) {
+                modalContent.innerHTML = `
+                    <div class="text-center text-gray-400 py-10 flex flex-col items-center">
+                        <i class="far fa-calendar-times text-4xl mb-3 text-gray-300"></i>
+                        <p>Belum ada jadwal di tanggal ini.</p>
+                        <p class="text-xs mt-1">Jadwal mobil kosong, siap dibooking!</p>
+                    </div>`;
+            } else {
+                dayBookings.forEach(b => {
+                    const isBlock = b.type === 'block';
+                    const cardColor = isBlock ? "bg-gray-800 text-gray-200 border-gray-900" : "bg-white border-l-4 border-blue-500 text-gray-700 shadow-sm";
+                    
+                    modalContent.innerHTML += `
+                        <div class="p-4 rounded-lg border ${cardColor} text-sm">
+                            <div class="font-bold text-base mb-1 flex justify-between items-start">
+                                <span>${b.name} <span class="text-xs font-normal text-gray-400 ml-1">${isBlock ? '' : `(${b.divisi || '-'})`}</span></span>
+                                ${isBlock ? '<span class="text-xs bg-red-600 text-white px-2 py-1 rounded">Blokir</span>' : ''}
+                            </div>
+                            <div class="flex items-center gap-2 text-xs mt-2 opacity-90">
+                                <i class="fas fa-car text-blue-500 w-4 text-center"></i> ${b.car}
+                            </div>
+                            <div class="flex items-center gap-2 text-xs mt-1 opacity-90">
+                                <i class="far fa-clock text-orange-500 w-4 text-center"></i> ${b.start} - ${b.end}
+                            </div>
+                            ${!isBlock && b.wa !== "-" ? `
+                            <div class="flex items-center gap-2 text-xs mt-1 opacity-90">
+                                <i class="fab fa-whatsapp text-green-500 w-4 text-center"></i> ${b.wa}
+                            </div>` : ''}
+                        </div>
+                    `;
+                });
+            }
+            
+            document.getElementById('bookingModal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('bookingModal').classList.add('hidden');
+        }
+
+        function goToBookingForm() {
+            closeModal();
+            document.getElementById('bookDate').value = selectedDateForBooking;
             window.scrollTo({ top: document.querySelector('#bookingForm').offsetTop - 100, behavior: 'smooth' });
         }
 
@@ -265,6 +365,7 @@
             btn.disabled = true;
 
             const name = document.getElementById('empName').value;
+            const divisi = document.getElementById('empDivisi').value;
             const empWa = document.getElementById('empWa').value;
             const car = document.getElementById('carSelect').value;
             const date = document.getElementById('bookDate').value;
@@ -289,6 +390,7 @@
             const newBooking = {
                 id: Date.now().toString(),
                 name: isAdmin && isBlock ? "DIBLOKIR ADMIN" : name,
+                divisi: isAdmin && isBlock ? "-" : divisi,
                 wa: empWa || "-",
                 car: isAdmin && isBlock ? "ALL CARS" : car,
                 date: date,
@@ -303,7 +405,7 @@
             renderBookingList();
 
             await saveBookingToDatabase(newBooking);
-            sendWhatsAppNotification(newBooking.name, empWa, newBooking.car, newBooking.date, newBooking.start, newBooking.end, isBlock);
+            sendWhatsAppNotification(newBooking.name, newBooking.divisi, empWa, newBooking.car, newBooking.date, newBooking.start, newBooking.end, isBlock);
 
             alert(isAdmin && isBlock ? "Tanggal berhasil diblokir!" : "Booking Berhasil!");
             document.getElementById('bookingForm').reset();
@@ -338,12 +440,12 @@
                 const cardColor = isBlock ? "bg-gray-800 text-gray-200" : "bg-white border-l-4 border-blue-500 text-gray-700";
                 
                 list.innerHTML += `
-                    <div class="p-3 rounded shadow-sm ${cardColor} relative group text-sm">
+                    <div class="p-3 rounded shadow-sm ${cardColor} relative group text-sm border ${isBlock ? 'border-gray-900' : 'border-gray-100'}">
                         <div class="font-bold flex justify-between">
-                            ${b.name}
-                            ${isAdmin ? `<button onclick="deleteBooking('${b.id}')" class="text-red-500 hover:text-red-700"><i class="fas fa-trash"></i></button>` : ''}
+                            <span>${b.name} ${isBlock ? '' : `<span class="text-[10px] font-normal text-gray-500 ml-1">(${b.divisi || '-'})</span>`}</span>
+                            ${isAdmin ? `<button onclick="deleteBooking('${b.id}')" class="text-red-500 hover:text-red-700 bg-white rounded-full w-6 h-6 flex justify-center items-center shadow-sm"><i class="fas fa-trash"></i></button>` : ''}
                         </div>
-                        <div class="text-xs mt-1 opacity-80"><i class="fas fa-car mr-1"></i> ${b.car}</div>
+                        <div class="text-xs mt-1 opacity-80"><i class="fas fa-car mr-1 text-blue-400"></i> ${b.car}</div>
                         <div class="text-xs mt-1 opacity-80 flex justify-between">
                             <span><i class="far fa-calendar mr-1"></i> ${b.date}</span>
                             <span><i class="far fa-clock mr-1"></i> ${b.start} - ${b.end}</span>
@@ -374,9 +476,9 @@
         }
 
         // --- Fungsi Notifikasi WA ---
-        function sendWhatsAppNotification(name, waNumber, car, date, start, end, isBlock) {
+        function sendWhatsAppNotification(name, divisi, waNumber, car, date, start, end, isBlock) {
             const adminWa = "085803993511"; 
-            const message = `🚗 *Notifikasi Car Booking* 🚗\n\n*Nama Peminjam:* ${name}\n*No. WA Peminjam:* ${waNumber || '-'}\n*Mobil:* ${car}\n*Tanggal:* ${date}\n*Waktu:* ${start} - ${end}\n\n` + (isBlock ? `⚠️ *Status: TANGGAL DIBLOKIR ADMIN*` : `✅ *Status: Booking Berhasil Dicatat*`);
+            const message = `🚗 *Notifikasi Car Booking* 🚗\n\n*Nama Peminjam:* ${name}\n*Divisi:* ${divisi}\n*No. WA Peminjam:* ${waNumber || '-'}\n*Mobil:* ${car}\n*Tanggal:* ${date}\n*Waktu:* ${start} - ${end}\n\n` + (isBlock ? `⚠️ *Status: TANGGAL DIBLOKIR ADMIN*` : `✅ *Status: Booking Berhasil Dicatat*`);
             let targetNumber = adminWa.replace(/\D/g, ''); 
             if (targetNumber.startsWith('0')) targetNumber = '62' + targetNumber.substring(1);
             window.open(`https://wa.me/${targetNumber}?text=${encodeURIComponent(message)}`, '_blank');
