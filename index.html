@@ -199,6 +199,7 @@
     </div>
 
     <script>
+        // Gunakan URL Database Asli Anda
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzsEqesmX1KQ6IXLAtjzZ46Cyc2eu4zJIQCnhGcCpJlujPbG7RbH3r-JznHIZR6IJbV/exec'; 
 
         let isAdmin = false;
@@ -255,19 +256,30 @@
                 const textData = await response.text();
                 
                 if (textData.trim().startsWith('<')) {
-                    document.getElementById('calendarGrid').innerHTML = `<div class='col-span-7 text-center py-4 text-red-600 font-bold border border-red-200 bg-red-50 rounded p-2'>⚠️ Akses Ditolak/URL Salah</div>`;
-                    return;
+                    throw new Error("URL Script salah, butuh login, atau akses diblokir.");
                 }
                 
                 const parsedData = JSON.parse(textData);
                 let rawPeminjamans = parsedData.Peminjamans || parsedData.bookings || [];
 
                 Peminjamans = rawPeminjamans.map(b => {
-                    // MENGAMBIL TUJUAN APAPUN NAMA KOLOMNYA DARI DATABASE (Tujuan, tujuan, TUJUAN, keterangan)
-                    let textTujuan = b.tujuan || b.Tujuan || b.TUJUAN || b.keterangan || b.Keterangan || "-";
+                    // PENCARIAN CERDAS: Mencari kolom Tujuan / Keperluan apapun namanya
+                    let keyTujuan = Object.keys(b).find(k => 
+                        k.toLowerCase().includes('tujuan') || 
+                        k.toLowerCase().includes('keterang') || 
+                        k.toLowerCase().includes('keperluan') || 
+                        k.toLowerCase().includes('purpose')
+                    );
+                    let textTujuan = keyTujuan ? b[keyTujuan] : "-";
+                    
+                    // PENCARIAN CERDAS: Mencari kolom WA
+                    let keyWa = Object.keys(b).find(k => k.toLowerCase() === 'wa' || k.toLowerCase().includes('whatsapp') || k.toLowerCase().includes('telepon'));
+                    let noWa = keyWa ? String(b[keyWa]) : "-";
+
                     return {
                         ...b,
                         tujuan: textTujuan,
+                        wa: noWa,
                         date: formatDisplayDate(b.date),
                         start: formatDisplayTime(b.start),
                         end: formatDisplayTime(b.end)
@@ -276,14 +288,28 @@
 
                 dataKaryawan = parsedData.karyawan || [];
                 
-                populateDropdown('empDivisi', parsedData.divisi || [], '-- Pilih Divisi --');
+                // MENGATASI MASALAH DIVISI HILANG DENGAN CARA FLEKSIBEL
+                let rawDivisi = parsedData.divisi || [];
+                if (rawDivisi.length > 0 && typeof rawDivisi[0] === 'object') {
+                    // Jika data divisi berbentuk tabel/objek, ambil nilainya saja
+                    rawDivisi = rawDivisi.map(d => Object.values(d)[0]);
+                }
+                // Jika data divisi masih kosong, kita cari manual dari daftar karyawan
+                if (rawDivisi.length === 0 && dataKaryawan.length > 0) {
+                    rawDivisi = dataKaryawan.map(k => k.divisi || k.Divisi || Object.values(k)[1]);
+                }
+                
+                // Buang duplikat dan pastikan bersih
+                let uniqueDivisi = [...new Set(rawDivisi)].filter(Boolean);
+                
+                populateDropdown('empDivisi', uniqueDivisi, '-- Pilih Divisi --');
                 document.getElementById('empName').innerHTML = `<option value="" disabled selected>-- Pilih Divisi Terlebih Dahulu --</option>`;
 
                 updateCalendar();
                 renderPeminjamanList();
             } catch (error) {
                 console.error('Error:', error);
-                document.getElementById('calendarGrid').innerHTML = `<div class='col-span-7 text-center py-4 text-red-600 font-bold bg-red-50 rounded'>❌ Gagal menarik data: ${error.message}</div>`;
+                document.getElementById('calendarGrid').innerHTML = `<div class='col-span-7 text-center py-4 text-red-600 font-bold bg-red-50 border border-red-200 rounded p-2'>❌ Gagal menarik data: ${error.message}</div>`;
             }
         }
 
@@ -301,14 +327,15 @@
             const nameSelect = document.getElementById('empName');
             nameSelect.innerHTML = `<option value="" disabled selected>-- Pilih Nama --</option>`;
             
-            const filteredKaryawan = dataKaryawan.filter(k => k.divisi === selectedDivisi);
+            const filteredKaryawan = dataKaryawan.filter(k => (k.divisi || k.Divisi || Object.values(k)[1]) === selectedDivisi);
             
             if (filteredKaryawan.length === 0) {
                 nameSelect.innerHTML = `<option value="" disabled selected>-- Tidak ada data --</option>`;
                 return;
             }
             filteredKaryawan.forEach(k => {
-                nameSelect.innerHTML += `<option value="${k.nama}">${k.nama}</option>`;
+                let namaKaryawan = k.nama || k.Nama || Object.values(k)[0];
+                nameSelect.innerHTML += `<option value="${namaKaryawan}">${namaKaryawan}</option>`;
             });
         }
 
@@ -410,7 +437,7 @@
                             waLinkHtml = `<a href="https://wa.me/${targetWa}" target="_blank" class="text-green-600 hover:text-green-800 underline font-semibold flex items-center gap-1"><i class="fab fa-whatsapp text-lg"></i> ${b.wa}</a>`;
                         }
 
-                        // MENAMPILKAN TUJUAN SECARA EKSPLISIT DI POP-UP (TEBAL/BOLD)
+                        // Menampilkan Tujuan di Pop-Up dengan Jelas
                         modalContent.innerHTML += `
                             <div class="p-4 rounded-lg border ${cardColor} text-sm">
                                 <div class="font-bold text-base mb-2 flex justify-between items-start border-b pb-2">
@@ -677,7 +704,7 @@
                 const isBlock = b.type === 'block';
                 const cardColor = isBlock ? "bg-gray-800 text-gray-200" : "bg-white border-l-4 border-blue-500 text-gray-700";
                 
-                // MENAMPILKAN TUJUAN SECARA EKSPLISIT DI DAFTAR SEBELAH KANAN (TEBAL/BOLD)
+                // Menampilkan Tujuan di Daftar Sebelah Kanan dengan Jelas
                 list.innerHTML += `
                     <div class="p-3 rounded shadow-sm ${cardColor} relative group text-sm border ${isBlock ? 'border-gray-900' : 'border-gray-100'}">
                         <div class="font-bold flex justify-between items-start">
