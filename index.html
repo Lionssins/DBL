@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -387,13 +386,16 @@
             modalContent.innerHTML = "";
             
             if (dayPeminjamans.length === 0) {
-                modalContent.innerHTML = `<div class="text-center text-gray-400 py-10 flex flex-col items-center"><i class="far fa-calendar-times text-4xl mb-3 text-gray-300"></i><p>Belum ada jadwal</p></div>`;
+                modalContent.innerHTML = `
+                    <div class="text-center text-gray-400 py-10 flex flex-col items-center">
+                        <i class="far fa-calendar-times text-4xl mb-3 text-gray-300"></i>
+                        <p>Belum ada jadwal peminjaman di tanggal ini.</p>
+                    </div>`;
             } else {
                 dayPeminjamans.forEach(b => {
                     const isBlock = b.type === 'block';
                     const cardColor = isBlock ? "bg-gray-800 text-gray-200 border-gray-900" : "bg-white border-l-4 border-blue-500 text-gray-700 shadow-sm";
                     
-                    // Generate Link WhatsApp Clickable
                     let waLinkHtml = "-";
                     if (b.wa && b.wa !== "-") {
                         let targetWa = b.wa.replace(/\D/g, '');
@@ -408,9 +410,9 @@
                                 ${isBlock ? '<span class="text-xs bg-red-600 text-white px-2 py-1 rounded">Blokir</span>' : ''}
                             </div>
                             <div class="space-y-2 opacity-90 text-xs">
-                                <div class="flex items-center gap-2"><i class="fas fa-car text-blue-500 w-4 text-center"></i> <span>${b.car}</span></div>
-                                <div class="flex items-center gap-2"><i class="far fa-clock text-orange-500 w-4 text-center"></i> <span>${b.start} - ${b.end}</span></div>
-                                ${!isBlock ? `<div class="flex items-start gap-2"><i class="fas fa-bullseye text-purple-500 w-4 text-center mt-0.5"></i> <span>${b.tujuan || '-'}</span></div>` : ''}
+                                <div class="flex items-center gap-2"><i class="fas fa-car text-blue-500 w-4 text-center"></i> <span class="font-semibold">${b.car}</span></div>
+                                <div class="flex items-center gap-2"><i class="far fa-clock text-orange-500 w-4 text-center"></i> <span>Jam: ${b.start} - ${b.end} WIB</span></div>
+                                ${!isBlock ? `<div class="flex items-start gap-2"><i class="fas fa-bullseye text-purple-500 w-4 text-center mt-0.5"></i> <span>Tujuan: ${b.tujuan || '-'}</span></div>` : ''}
                                 ${!isBlock ? `<div class="flex items-center gap-2 mt-2 pt-2 border-t">${waLinkHtml}</div>` : ''}
                             </div>
                         </div>
@@ -420,7 +422,9 @@
             document.getElementById('PeminjamanModal').classList.remove('hidden');
         }
 
-        function closeModal() { document.getElementById('PeminjamanModal').classList.add('hidden'); }
+        function closeModal() { 
+            document.getElementById('PeminjamanModal').classList.add('hidden'); 
+        }
 
         function goToPeminjamanForm() {
             closeModal();
@@ -488,7 +492,6 @@
                 return; 
             }
 
-            // Simpan data sementara
             tempBookingData = { name, divisi, empWa, car, start, end, isBlock, dateArray, btn, tujuan };
 
             if(isAdmin && isBlock) {
