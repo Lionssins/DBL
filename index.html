@@ -143,7 +143,7 @@
         </div>
     </div>
 
-    <div id="PeminjamanModal" class="hidden fixed inset-0 bg-black bg-opacity-60 z-[100] flex justify-center items-center p-4 backdrop-blur-sm transition-opacity">
+    <div id="PeminjamanModal" style="display: none;" class="fixed inset-0 bg-black bg-opacity-60 z-[100] justify-center items-center p-4 backdrop-blur-sm transition-opacity">
         <div class="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col max-h-[85vh]">
             <div class="bg-blue-800 text-white p-4 flex justify-between items-center shadow-md">
                 <h3 class="font-bold text-lg" id="modalTitle">Detail Peminjaman</h3>
@@ -159,7 +159,7 @@
         </div>
     </div>
 
-    <div id="agreementModal" class="hidden fixed inset-0 bg-black bg-opacity-70 z-[110] flex justify-center items-center p-4 backdrop-blur-sm transition-opacity">
+    <div id="agreementModal" style="display: none;" class="fixed inset-0 bg-black bg-opacity-70 z-[110] justify-center items-center p-4 backdrop-blur-sm transition-opacity">
         <div class="bg-white rounded-xl shadow-2xl w-full max-w-3xl overflow-hidden flex flex-col max-h-[90vh]">
             <div class="bg-blue-800 text-white p-4 flex justify-between items-center shadow-md">
                 <h3 class="font-bold text-lg flex items-center gap-2"><i class="fas fa-file-signature"></i> Syarat & Ketentuan Peminjaman</h3>
@@ -419,11 +419,13 @@
                     `;
                 });
             }
-            document.getElementById('PeminjamanModal').classList.remove('hidden');
+            // Tampilkan pop up
+            document.getElementById('PeminjamanModal').style.display = 'flex';
         }
 
         function closeModal() { 
-            document.getElementById('PeminjamanModal').classList.add('hidden'); 
+            // Tutup pop up
+            document.getElementById('PeminjamanModal').style.display = 'none'; 
         }
 
         function goToPeminjamanForm() {
@@ -497,19 +499,21 @@
             if(isAdmin && isBlock) {
                 executePeminjaman();
             } else {
-                document.getElementById('agreementModal').classList.remove('hidden');
+                // Tampilkan form persetujuan
+                document.getElementById('agreementModal').style.display = 'flex';
             }
         }
 
         function closeAgreementModal() {
-            document.getElementById('agreementModal').classList.add('hidden');
+            // Tutup form persetujuan
+            document.getElementById('agreementModal').style.display = 'none';
             tempBookingData = null; 
         }
 
         async function executePeminjaman() {
             if (!tempBookingData) return;
 
-            document.getElementById('agreementModal').classList.add('hidden');
+            document.getElementById('agreementModal').style.display = 'none';
 
             const { name, divisi, empWa, car, start, end, isBlock, dateArray, btn, tujuan } = tempBookingData;
 
