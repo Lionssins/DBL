@@ -154,6 +154,45 @@
         </div>
     </div>
 
+    <div id="agreementModal" class="hidden fixed inset-0 bg-black bg-opacity-70 z-[110] flex justify-center items-center p-4 backdrop-blur-sm transition-opacity">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-3xl overflow-hidden flex flex-col max-h-[90vh]">
+            <div class="bg-blue-800 text-white p-4 flex justify-between items-center shadow-md">
+                <h3 class="font-bold text-lg flex items-center gap-2"><i class="fas fa-file-signature"></i> Syarat & Ketentuan Peminjaman</h3>
+                <button onclick="closeAgreementModal()" class="text-white hover:text-red-300 font-bold text-2xl leading-none">&times;</button>
+            </div>
+            
+            <div class="p-6 overflow-y-auto flex-1 bg-gray-50 text-sm md:text-base text-gray-800" id="printArea">
+                <p class="font-bold mb-3 text-red-600">Saya selaku peminjam menyetujui untuk :</p>
+                <ol class="list-decimal pl-5 space-y-3 text-justify">
+                    <li>Bertanggung jawab sepenuhnya terhadap kehilangan dan kerusakan kendaraan selama pemakaian.</li>
+                    <li>Tidak merokok di dalam mobil, tidak membawa makanan berbau menyengat (durian), dan menjaga kebersihan.</li>
+                    <li>Tidak mengemudikan kendaraan diatas batas maksimum kecepatan, memiliki dan membawa SIM yang berlaku, serta mentaati peraturan lalu lintas.</li>
+                    <li>Mengisi kembali BBM yang terpakai sesuai dengan aturan (minimal seperti semula sebelum memakai).</li>
+                    <li>Mengembalikan mobil sesuai dengan tanggal dan waktu yang sudah tertera pada form.</li>
+                    <li>Apabila terjadi keterlambatan pengembalian mobil dan/atau ketidaksesuaian pengisian BBM, maka permintaan peminjaman mobil bagi seluruh karyawan di divisi terkait akan ditangguhkan selama 30 (tiga puluh) hari, terhitung sejak tanggal berakhirnya masa peminjaman terakhir.</li>
+                    <li>Konfirmasi peminjaman maksimal h+3 jam setelah isi form (PIC mobil : General Affair).</li>
+                    <li>Serah terima peminjaman dan pengembalian mobil WAJIB ADA DOKUMENTASI kilometer dan bbm dikirim by WA.</li>
+                    <li>Pengembalian mobil harus tepat waktu, sesuai dengan tanggal dan jam yang telah ditulis pada form.</li>
+                    <li>Keterlambatan pengembalian mobil dapat mengganggu proses peminjaman tim lain.</li>
+                </ol>
+            </div>
+            
+            <div class="p-4 border-t bg-gray-100 flex flex-col md:flex-row justify-between items-center gap-3">
+                <button onclick="printPDF()" class="w-full md:w-auto bg-green-600 hover:bg-green-700 text-white font-semibold px-4 py-2 rounded-lg shadow transition flex items-center justify-center gap-2">
+                    <i class="fas fa-file-pdf"></i> Cetak PDF Persetujuan
+                </button>
+                <div class="flex gap-2 w-full md:w-auto">
+                    <button onclick="closeAgreementModal()" class="w-full md:w-auto bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold px-4 py-2 rounded-lg shadow transition">
+                        Batal
+                    </button>
+                    <button onclick="executePeminjaman()" class="w-full md:w-auto bg-blue-700 hover:bg-blue-800 text-white font-bold px-6 py-2 rounded-lg shadow transition flex items-center justify-center gap-2">
+                        Setuju & Lanjutkan <i class="fas fa-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzsEqesmX1KQ6IXLAtjzZ46Cyc2eu4zJIQCnhGcCpJlujPbG7RbH3r-JznHIZR6IJbV/exec'; 
 
@@ -164,6 +203,9 @@
         let currentMonth = today.getMonth();
         let currentYear = today.getFullYear();
         let selectedDateForPeminjaman = "";
+
+        // Variabel global untuk menampung data sementara sebelum disetujui
+        let tempBookingData = null;
 
         document.addEventListener('DOMContentLoaded', () => {
             setupYearSelect();
@@ -214,7 +256,7 @@
                 }
                 
                 const parsedData = JSON.parse(textData);
-                let rawPeminjamans = parsedData.Peminjamans || parsedData.bookings || []; // fallback jika di backend namanya bookings
+                let rawPeminjamans = parsedData.Peminjamans || parsedData.bookings || [];
 
                 Peminjamans = rawPeminjamans.map(b => ({
                     ...b,
@@ -261,7 +303,6 @@
             });
         }
 
-        // PERBAIKAN: Menambahkan text/plain agar Google Script tidak memblokir POST Request
         async function savePeminjamanToDatabase(PeminjamanData) {
             try {
                 await fetch(SCRIPT_URL, {
@@ -371,11 +412,10 @@
             window.scrollTo({ top: document.querySelector('#PeminjamanForm').offsetTop - 100, behavior: 'smooth' });
         }
 
+        // TAHAP 1: Validasi dan Tampilkan Pop up Persetujuan
         async function handlePeminjaman(e) {
             e.preventDefault();
             const btn = e.target.querySelector('button[type="submit"]');
-            btn.innerHTML = "<i class='fas fa-spinner fa-spin'></i> Memproses...";
-            btn.disabled = true;
 
             const name = document.getElementById('empName').value;
             const divisi = document.getElementById('empDivisi').value;
@@ -389,7 +429,6 @@
 
             if (start >= end) { 
                 alert("Jam selesai harus lebih akhir dari jam mulai!"); 
-                resetBtn(btn); 
                 return; 
             }
 
@@ -399,7 +438,6 @@
 
             if (endDate < startDate) {
                 alert("Tanggal Akhir tidak boleh lebih awal dari Tanggal Mulai!");
-                resetBtn(btn);
                 return;
             }
 
@@ -409,19 +447,17 @@
                 const mm = String(loopDate.getMonth() + 1).padStart(2, '0');
                 const dd = String(loopDate.getDate()).padStart(2, '0');
                 dateArray.push(`${yyyy}-${mm}-${dd}`);
-                
                 loopDate.setDate(loopDate.getDate() + 1);
             }
 
             let hasConflict = false;
             let conflictDates = [];
 
-            // PERBAIKAN: Logika pengecekan jam bentrok yang 100% akurat
             for (const date of dateArray) {
                 const conflict = Peminjamans.find(b => 
                     b.date === date && 
                     b.car === car && 
-                    (start < b.end && end > b.start) // Rumus valid waktu overlap
+                    (start < b.end && end > b.start)
                 );
                 
                 if (conflict && !isAdmin) {
@@ -432,9 +468,38 @@
 
             if (hasConflict) { 
                 alert(`Mobil sudah dipinjam pada jam tersebut di tanggal: \n${conflictDates.join('\n')}`); 
-                resetBtn(btn); 
                 return; 
             }
+
+            // Simpan data sementara
+            tempBookingData = { name, divisi, empWa, car, start, end, isBlock, dateArray, btn };
+
+            // Jika admin melakukan block, langsung eksekusi tanpa pop-up persetujuan
+            if(isAdmin && isBlock) {
+                executePeminjaman();
+            } else {
+                // Tampilkan Pop Up Persetujuan
+                document.getElementById('agreementModal').classList.remove('hidden');
+            }
+        }
+
+        function closeAgreementModal() {
+            document.getElementById('agreementModal').classList.add('hidden');
+            tempBookingData = null; // hapus memori data sementara
+        }
+
+        // TAHAP 2: Eksekusi Penyimpanan jika user setuju
+        async function executePeminjaman() {
+            if (!tempBookingData) return;
+
+            // Tutup modal persetujuan
+            document.getElementById('agreementModal').classList.add('hidden');
+
+            const { name, divisi, empWa, car, start, end, isBlock, dateArray, btn } = tempBookingData;
+
+            // Update UI Tombol Konfirmasi
+            btn.innerHTML = "<i class='fas fa-spinner fa-spin'></i> Memproses...";
+            btn.disabled = true;
 
             const newPeminjamans = dateArray.map((date, index) => ({
                 id: Date.now().toString() + index, 
@@ -448,17 +513,14 @@
                 type: isAdmin && isBlock ? 'block' : 'Peminjaman'
             }));
 
-            // Langsung update di tampilan lokal
             Peminjamans.push(...newPeminjamans);
             Peminjamans.sort((a, b) => new Date(a.date) - new Date(b.date));
             
             updateCalendar();
             renderPeminjamanList();
             
-            // Simpan ke database tanpa menghentikan UI
             try {
                 await Promise.all(newPeminjamans.map(b => savePeminjamanToDatabase(b)));
-                // Opsional: Tarik ulang data selang 3 detik untuk memastikan sinkron 100% dengan DB
                 setTimeout(() => { fetchPeminjamans(); }, 3000);
             } catch(e) {
                 console.error("Gagal menyimpan beberapa data:", e);
@@ -476,13 +538,91 @@
                 isBlock
             );
 
-            alert(isAdmin && isBlock ? "Tanggal berhasil diblokir!" : "Peminjaman Berhasil!");
+            alert(isAdmin && isBlock ? "Tanggal berhasil diblokir!" : "Peminjaman Berhasil Dicatat!");
             document.getElementById('PeminjamanForm').reset();
             filterKaryawanByDivisi(); 
             resetBtn(btn);
+            tempBookingData = null; // Clear data
         }
 
         function resetBtn(btn) { btn.innerHTML = "Konfirmasi Peminjaman"; btn.disabled = false; }
+
+        // FUNGSI UNTUK MENCETAK KE PDF (Buka Window Baru yang Rapi)
+        function printPDF() {
+            if (!tempBookingData) {
+                alert("Harap isi form terlebih dahulu.");
+                return;
+            }
+
+            const { name, divisi, car, start, end, dateArray } = tempBookingData;
+            const printContent = document.getElementById('printArea').innerHTML;
+            const waDateText = dateArray.length > 1 ? `${dateArray[0]} s/d ${dateArray[dateArray.length-1]}` : dateArray[0];
+            
+            // Buat Jendela / Tab Cetak Baru
+            const printWindow = window.open('', '_blank', 'width=800,height=900');
+            
+            printWindow.document.write(`
+                <html>
+                <head>
+                    <title>Surat Persetujuan Peminjaman Mobil - ${name}</title>
+                    <style>
+                        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 40px; color: #333; line-height: 1.6; }
+                        h2 { text-align: center; border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 30px; text-transform: uppercase; letter-spacing: 1px;}
+                        .info-table { width: 100%; margin-bottom: 30px; border-collapse: collapse; }
+                        .info-table td { padding: 8px 0; font-size: 15px;}
+                        .info-table td:first-child { width: 150px; font-weight: bold; }
+                        .terms-box { background: #f9f9f9; padding: 25px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; text-align: justify; }
+                        .signature-section { margin-top: 60px; display: flex; justify-content: space-between; text-align: center; }
+                        .signature-box { width: 200px; }
+                        .signature-box p { margin: 5px 0; }
+                        .space-sign { height: 80px; }
+                        @media print { body { padding: 0; } button { display: none; } }
+                    </style>
+                </head>
+                <body>
+                    <h2>Form Persetujuan Peminjaman Mobil</h2>
+                    
+                    <table class="info-table">
+                        <tr><td>Nama Peminjam</td><td>: ${name}</td></tr>
+                        <tr><td>Divisi</td><td>: ${divisi}</td></tr>
+                        <tr><td>Mobil Dipinjam</td><td>: ${car}</td></tr>
+                        <tr><td>Tanggal</td><td>: ${waDateText}</td></tr>
+                        <tr><td>Waktu</td><td>: ${start} - ${end} WIB</td></tr>
+                    </table>
+
+                    <div class="terms-box">
+                        ${printContent}
+                    </div>
+
+                    <div class="signature-section">
+                        <div class="signature-box">
+                            <p>Mengetahui,</p>
+                            <p>Admin / PIC Kendaraan</p>
+                            <div class="space-sign"></div>
+                            <p><strong>( General Affair )</strong></p>
+                        </div>
+                        <div class="signature-box">
+                            <p>Menyetujui,</p>
+                            <p>Peminjam</p>
+                            <div class="space-sign"></div>
+                            <p><strong>( ${name} )</strong></p>
+                        </div>
+                    </div>
+                    
+                    <script>
+                        // Otomatis trigger print dialog setelah render selesai
+                        window.onload = function() {
+                            setTimeout(function() {
+                                window.print();
+                            }, 500);
+                        }
+                    <\/script>
+                </body>
+                </html>
+            `);
+            printWindow.document.close();
+            printWindow.focus();
+        }
 
         async function deletePeminjaman(id) {
             if(!confirm("Hapus Peminjaman ini?")) return;
