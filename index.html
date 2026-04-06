@@ -90,10 +90,14 @@
                         </div>
                     </div>
                     
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Tanggal</label>
-                            <input type="date" id="bookDate" required class="w-full border rounded-lg p-2">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Tanggal Mulai</label>
+                            <input type="date" id="startDate" required class="w-full border rounded-lg p-2">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Tanggal Akhir <span class="text-xs text-gray-400">(Opsional)</span></label>
+                            <input type="date" id="endDate" class="w-full border rounded-lg p-2">
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Jam Mulai</label>
@@ -316,7 +320,8 @@
 
         function goToBookingForm() {
             closeModal();
-            document.getElementById('bookDate').value = selectedDateForBooking;
+            document.getElementById('startDate').value = selectedDateForBooking;
+            document.getElementById('endDate').value = ""; // Bersihkan opsi rentang
             window.scrollTo({ top: document.querySelector('#bookingForm').offsetTop - 100, behavior: 'smooth' });
         }
 
@@ -330,37 +335,100 @@
             const divisi = document.getElementById('empDivisi').value;
             const empWa = document.getElementById('empWa').value;
             const car = document.getElementById('carSelect').value;
-            const date = document.getElementById('bookDate').value;
+            const startDateStr = document.getElementById('startDate').value;
+            const endDateStr = document.getElementById('endDate').value;
             const start = document.getElementById('startTime').value;
             const end = document.getElementById('endTime').value;
             const isBlock = !document.getElementById('adminControls').classList.contains('hidden') ? document.getElementById('isBlock').checked : false;
 
-            if (start >= end) { alert("Jam selesai harus lebih akhir dari jam mulai!"); resetBtn(btn); return; }
+            if (start >= end) { 
+                alert("Jam selesai harus lebih akhir dari jam mulai!"); 
+                resetBtn(btn); 
+                return; 
+            }
 
-            const conflict = bookings.find(b => b.date === date && b.car === car && ((start >= b.start && start < b.end) || (end > b.start && end <= b.end)));
-            if (conflict && !isAdmin) { alert("Mobil ini sudah dibooking pada jam tersebut!"); resetBtn(btn); return; }
+            // Buat Array Tanggal dari Start sampai End
+            const startDate = new Date(startDateStr);
+            const endDate = endDateStr ? new Date(endDateStr) : new Date(startDateStr);
+            const dateArray = [];
 
-            const newBooking = {
-                id: Date.now().toString(),
+            if (endDate < startDate) {
+                alert("Tanggal Akhir tidak boleh lebih awal dari Tanggal Mulai!");
+                resetBtn(btn);
+                return;
+            }
+
+            let loopDate = new Date(startDate);
+            while (loopDate <= endDate) {
+                const yyyy = loopDate.getFullYear();
+                const mm = String(loopDate.getMonth() + 1).padStart(2, '0');
+                const dd = String(loopDate.getDate()).padStart(2, '0');
+                dateArray.push(`${yyyy}-${mm}-${dd}`);
+                
+                loopDate.setDate(loopDate.getDate() + 1);
+            }
+
+            // Cek conflict untuk semua tanggal yang dipilih
+            let hasConflict = false;
+            let conflictDates = [];
+
+            for (const date of dateArray) {
+                const conflict = bookings.find(b => b.date === date && b.car === car && ((start >= b.start && start < b.end) || (end > b.start && end <= b.end)));
+                if (conflict && !isAdmin) {
+                    hasConflict = true;
+                    conflictDates.push(date);
+                }
+            }
+
+            if (hasConflict) { 
+                alert(`Mobil sudah dibooking pada jam tersebut di tanggal: \n${conflictDates.join('\n')}`); 
+                resetBtn(btn); 
+                return; 
+            }
+
+            // Generate Booking Objects
+            const newBookings = dateArray.map((date, index) => ({
+                id: Date.now().toString() + index, // Tambah index agar ID unik saat diproses cepat
                 name: isAdmin && isBlock ? "DIBLOKIR ADMIN" : name,
                 divisi: isAdmin && isBlock ? "-" : divisi,
                 wa: empWa || "-",
                 car: isAdmin && isBlock ? "ALL CARS" : car,
-                date: date, start: start, end: end,
+                date: date, 
+                start: start, 
+                end: end,
                 type: isAdmin && isBlock ? 'block' : 'booking'
-            };
+            }));
 
-            bookings.push(newBooking);
+            // Push ke array lokal
+            bookings.push(...newBookings);
             bookings.sort((a, b) => new Date(a.date) - new Date(b.date));
+            
             updateCalendar();
             renderBookingList();
             
-            await saveBookingToDatabase(newBooking);
-            sendWhatsAppNotification(newBooking.name, newBooking.divisi, empWa, newBooking.car, newBooking.date, newBooking.start, newBooking.end, isBlock);
+            // Simpan ke DB secara paralel (Promise.all)
+            try {
+                await Promise.all(newBookings.map(b => saveBookingToDatabase(b)));
+            } catch(e) {
+                console.error("Gagal menyimpan beberapa data:", e);
+            }
+
+            // Format tanggal untuk notifikasi WA (Tanggal Mulai - Tanggal Akhir jika ada)
+            const waDateText = dateArray.length > 1 ? `${dateArray[0]} s/d ${dateArray[dateArray.length-1]}` : dateArray[0];
+            sendWhatsAppNotification(
+                isAdmin && isBlock ? "ADMIN" : name, 
+                isAdmin && isBlock ? "-" : divisi, 
+                empWa, 
+                isAdmin && isBlock ? "ALL CARS" : car, 
+                waDateText, 
+                start, 
+                end, 
+                isBlock
+            );
 
             alert(isAdmin && isBlock ? "Tanggal berhasil diblokir!" : "Booking Berhasil!");
             document.getElementById('bookingForm').reset();
-            filterKaryawanByDivisi(); // reset the nama dropdown
+            filterKaryawanByDivisi(); 
             resetBtn(btn);
         }
 
@@ -424,13 +492,12 @@
             renderBookingList();
         }
 
-        function sendWhatsAppNotification(name, divisi, waNumber, car, date, start, end, isBlock) {
+        function sendWhatsAppNotification(name, divisi, waNumber, car, dateText, start, end, isBlock) {
             const adminWa = "085803993511"; 
-            const message = `🚗 *Notifikasi Car Booking* 🚗\n\n*Nama Peminjam:* ${name}\n*Divisi:* ${divisi}\n*No. WA Peminjam:* ${waNumber || '-'}\n*Mobil:* ${car}\n*Tanggal:* ${date}\n*Waktu:* ${start} - ${end}\n\n` + (isBlock ? `⚠️ *Status: TANGGAL DIBLOKIR ADMIN*` : `✅ *Status: Booking Berhasil Dicatat*`);
+            const message = `🚗 *Notifikasi Car Booking* 🚗\n\n*Nama Peminjam:* ${name}\n*Divisi:* ${divisi}\n*No. WA Peminjam:* ${waNumber || '-'}\n*Mobil:* ${car}\n*Tanggal:* ${dateText}\n*Waktu:* ${start} - ${end}\n\n` + (isBlock ? `⚠️ *Status: TANGGAL DIBLOKIR ADMIN*` : `✅ *Status: Booking Berhasil Dicatat*`);
             let targetNumber = adminWa.replace(/\D/g, ''); 
             if (targetNumber.startsWith('0')) targetNumber = '62' + targetNumber.substring(1);
             
-            // Kita gunakan setTimeout agar window.open tidak diblokir terlalu cepat oleh beberapa browser sebelum fungsi async selesai
             setTimeout(() => {
                 window.open(`https://wa.me/${targetNumber}?text=${encodeURIComponent(message)}`, '_blank');
             }, 500);
