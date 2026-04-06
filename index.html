@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistem Booking Mobil Karyawan</title>
+    <title>Sistem Peminjaman Mobil Karyawan</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
@@ -59,10 +59,10 @@
 
             <div class="bg-white p-6 rounded-xl shadow-md border-l-4 border-blue-600">
                 <h3 class="text-xl font-bold mb-4 flex items-center gap-2">
-                    <i class="far fa-calendar-plus text-blue-600"></i> Form Booking Baru
+                    <i class="far fa-calendar-plus text-blue-600"></i> Form Peminjaman Baru
                 </h3>
                 
-                <form id="bookingForm" onsubmit="handleBooking(event)" class="space-y-4">
+                <form id="PeminjamanForm" onsubmit="handlePeminjaman(event)" class="space-y-4">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Divisi</label>
@@ -116,7 +116,7 @@
                     </div>
 
                     <button type="submit" class="w-full bg-blue-700 hover:bg-blue-800 text-white font-bold py-3 rounded-lg shadow transition transform active:scale-95">
-                        Konfirmasi Booking
+                        Konfirmasi Peminjaman
                     </button>
                 </form>
             </div>
@@ -125,30 +125,30 @@
         <div class="lg:col-span-1">
             <div class="bg-white p-4 rounded-xl shadow-md sticky top-24 h-[85vh] flex flex-col">
                 <h3 class="text-lg font-bold border-b pb-2 mb-2 flex justify-between items-center">
-                    <span><i class="fas fa-list-ul text-blue-500 mr-2"></i>Daftar Booking</span>
-                    <span class="text-xs bg-gray-200 px-2 py-1 rounded-full" id="totalBookings">0</span>
+                    <span><i class="fas fa-list-ul text-blue-500 mr-2"></i>Daftar Peminjaman</span>
+                    <span class="text-xs bg-gray-200 px-2 py-1 rounded-full" id="totalPeminjamans">0</span>
                 </h3>
                 <div class="mb-2">
-                    <input type="text" id="searchBook" onkeyup="renderBookingList()" placeholder="Cari nama..." class="w-full text-sm p-2 border rounded">
+                    <input type="text" id="searchBook" onkeyup="renderPeminjamanList()" placeholder="Cari nama..." class="w-full text-sm p-2 border rounded">
                 </div>
-                <div id="bookingList" class="flex-1 overflow-y-auto space-y-3 pr-2">
-                    <div class="text-center text-gray-400 mt-10">Belum ada booking</div>
+                <div id="PeminjamanList" class="flex-1 overflow-y-auto space-y-3 pr-2">
+                    <div class="text-center text-gray-400 mt-10">Belum ada Peminjaman</div>
                 </div>
             </div>
         </div>
     </div>
 
-    <div id="bookingModal" class="hidden fixed inset-0 bg-black bg-opacity-60 z-[100] flex justify-center items-center p-4 backdrop-blur-sm transition-opacity">
+    <div id="PeminjamanModal" class="hidden fixed inset-0 bg-black bg-opacity-60 z-[100] flex justify-center items-center p-4 backdrop-blur-sm transition-opacity">
         <div class="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col max-h-[85vh]">
             <div class="bg-blue-800 text-white p-4 flex justify-between items-center shadow-md">
-                <h3 class="font-bold text-lg" id="modalTitle">Detail Booking</h3>
+                <h3 class="font-bold text-lg" id="modalTitle">Detail Peminjaman</h3>
                 <button onclick="closeModal()" class="text-white hover:text-red-300 font-bold text-2xl leading-none">&times;</button>
             </div>
             <div id="modalContent" class="p-5 overflow-y-auto flex-1 space-y-3 bg-gray-50"></div>
             <div class="p-4 border-t bg-white flex justify-end gap-2">
                 <button onclick="closeModal()" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold px-4 py-2 rounded-lg shadow-sm">Tutup</button>
-                <button onclick="goToBookingForm()" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-lg shadow-sm flex items-center gap-2">
-                    <i class="far fa-calendar-check"></i> Booking Disini
+                <button onclick="goToPeminjamanForm()" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-lg shadow-sm flex items-center gap-2">
+                    <i class="far fa-calendar-check"></i> Peminjaman Disini
                 </button>
             </div>
         </div>
@@ -158,18 +158,18 @@
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzsEqesmX1KQ6IXLAtjzZ46Cyc2eu4zJIQCnhGcCpJlujPbG7RbH3r-JznHIZR6IJbV/exec'; 
 
         let isAdmin = false;
-        let bookings = [];
+        let Peminjamans = [];
         let dataKaryawan = [];
         const today = new Date();
         let currentMonth = today.getMonth();
         let currentYear = today.getFullYear();
-        let selectedDateForBooking = "";
+        let selectedDateForPeminjaman = "";
 
         document.addEventListener('DOMContentLoaded', () => {
             setupYearSelect();
             document.getElementById('monthSelect').value = currentMonth;
             document.getElementById('calendarGrid').innerHTML = "<div class='col-span-7 text-center py-4 text-blue-600 font-bold'><i class='fas fa-spinner fa-spin'></i> Menghubungkan ke Database...</div>";
-            fetchBookings();
+            fetchPeminjamans();
         });
 
         // --- FUNGSI PARSING AMAN (TIDAK AKAN CRASH DI PERANGKAT APAPUN) ---
@@ -206,7 +206,7 @@
             } catch(e) { return val; }
         }
 
-        async function fetchBookings() {
+        async function fetchPeminjamans() {
             try {
                 const response = await fetch(SCRIPT_URL);
                 const textData = await response.text();
@@ -217,9 +217,9 @@
                 }
                 
                 const parsedData = JSON.parse(textData);
-                let rawBookings = parsedData.bookings || [];
+                let rawPeminjamans = parsedData.Peminjamans || [];
 
-                bookings = rawBookings.map(b => ({
+                Peminjamans = rawPeminjamans.map(b => ({
                     ...b,
                     date: formatDisplayDate(b.date),
                     start: formatDisplayTime(b.start),
@@ -232,7 +232,7 @@
                 document.getElementById('empName').innerHTML = `<option value="" disabled selected>-- Pilih Divisi Terlebih Dahulu --</option>`;
 
                 updateCalendar();
-                renderBookingList();
+                renderPeminjamanList();
             } catch (error) {
                 console.error('Error:', error);
                 document.getElementById('calendarGrid').innerHTML = `<div class='col-span-7 text-center py-4 text-red-600 font-bold bg-red-50 rounded'>❌ Gagal menarik data: ${error.message}</div>`;
@@ -264,16 +264,16 @@
             });
         }
 
-        async function saveBookingToDatabase(bookingData) {
+        async function savePeminjamanToDatabase(PeminjamanData) {
             try {
                 await fetch(SCRIPT_URL, {
                     method: 'POST',
-                    body: JSON.stringify({ action: 'add', ...bookingData })
+                    body: JSON.stringify({ action: 'add', ...PeminjamanData })
                 });
             } catch (error) { console.error('Error saving:', error); }
         }
 
-        async function deleteBookingFromDatabase(id) {
+        async function deletePeminjamanFromDatabase(id) {
             try {
                 await fetch(SCRIPT_URL, {
                     method: 'POST',
@@ -308,31 +308,31 @@
 
             for (let i = 1; i <= daysInMonth; i++) {
                 const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
-                const dayBookings = bookings.filter(b => b.date === dateStr);
+                const dayPeminjamans = Peminjamans.filter(b => b.date === dateStr);
                 
                 let bgClass = "bg-green-50 hover:bg-green-100 text-gray-700";
                 let borderClass = "border-gray-200";
                 
-                if (dayBookings.some(b => b.type === 'block')) {
+                if (dayPeminjamans.some(b => b.type === 'block')) {
                     bgClass = "bg-gray-800 text-white hover:bg-gray-700"; borderClass = "border-gray-800";
-                } else if (dayBookings.length >= 3) {
+                } else if (dayPeminjamans.length >= 3) {
                     bgClass = "bg-red-100 text-red-700 font-bold hover:bg-red-200"; borderClass = "border-red-300";
-                } else if (dayBookings.length > 0) {
+                } else if (dayPeminjamans.length > 0) {
                     bgClass = "bg-yellow-50 text-yellow-700 hover:bg-yellow-100"; borderClass = "border-yellow-300";
                 }
 
                 calendarGrid.innerHTML += `
                     <div onclick="selectDate('${dateStr}')" class="h-10 md:h-14 flex flex-col justify-center items-center rounded cursor-pointer border ${borderClass} ${bgClass} transition text-xs md:text-sm relative">
                         <span>${i}</span>
-                        ${dayBookings.length > 0 && !dayBookings.some(b => b.type === 'block') ? `<span class="hidden md:block text-[9px] mt-1">${dayBookings.length} Booked</span>` : ''}
+                        ${dayPeminjamans.length > 0 && !dayPeminjamans.some(b => b.type === 'block') ? `<span class="hidden md:block text-[9px] mt-1">${dayPeminjamans.length} Booked</span>` : ''}
                     </div>
                 `;
             }
         }
 
         function selectDate(date) {
-            selectedDateForBooking = date;
-            const dayBookings = bookings.filter(b => b.date === date);
+            selectedDateForPeminjaman = date;
+            const dayPeminjamans = Peminjamans.filter(b => b.date === date);
             const dateObj = new Date(date);
             const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
             document.getElementById('modalTitle').innerText = dateObj.toLocaleDateString('id-ID', options);
@@ -340,10 +340,10 @@
             const modalContent = document.getElementById('modalContent');
             modalContent.innerHTML = "";
             
-            if (dayBookings.length === 0) {
+            if (dayPeminjamans.length === 0) {
                 modalContent.innerHTML = `<div class="text-center text-gray-400 py-10 flex flex-col items-center"><i class="far fa-calendar-times text-4xl mb-3 text-gray-300"></i><p>Belum ada jadwal</p></div>`;
             } else {
-                dayBookings.forEach(b => {
+                dayPeminjamans.forEach(b => {
                     const isBlock = b.type === 'block';
                     const cardColor = isBlock ? "bg-gray-800 text-gray-200 border-gray-900" : "bg-white border-l-4 border-blue-500 text-gray-700 shadow-sm";
                     
@@ -359,19 +359,19 @@
                     `;
                 });
             }
-            document.getElementById('bookingModal').classList.remove('hidden');
+            document.getElementById('PeminjamanModal').classList.remove('hidden');
         }
 
-        function closeModal() { document.getElementById('bookingModal').classList.add('hidden'); }
+        function closeModal() { document.getElementById('PeminjamanModal').classList.add('hidden'); }
 
-        function goToBookingForm() {
+        function goToPeminjamanForm() {
             closeModal();
-            document.getElementById('startDate').value = selectedDateForBooking;
+            document.getElementById('startDate').value = selectedDateForPeminjaman;
             document.getElementById('endDate').value = ""; 
-            window.scrollTo({ top: document.querySelector('#bookingForm').offsetTop - 100, behavior: 'smooth' });
+            window.scrollTo({ top: document.querySelector('#PeminjamanForm').offsetTop - 100, behavior: 'smooth' });
         }
 
-        async function handleBooking(e) {
+        async function handlePeminjaman(e) {
             e.preventDefault();
             const btn = e.target.querySelector('button[type="submit"]');
             btn.innerHTML = "<i class='fas fa-spinner fa-spin'></i> Memproses...";
@@ -417,7 +417,7 @@
             let conflictDates = [];
 
             for (const date of dateArray) {
-                const conflict = bookings.find(b => b.date === date && b.car === car && ((start >= b.start && start < b.end) || (end > b.start && end <= b.end)));
+                const conflict = Peminjamans.find(b => b.date === date && b.car === car && ((start >= b.start && start < b.end) || (end > b.start && end <= b.end)));
                 if (conflict && !isAdmin) {
                     hasConflict = true;
                     conflictDates.push(date);
@@ -425,12 +425,12 @@
             }
 
             if (hasConflict) { 
-                alert(`Mobil sudah dibooking pada jam tersebut di tanggal: \n${conflictDates.join('\n')}`); 
+                alert(`Mobil sudah diPeminjaman pada jam tersebut di tanggal: \n${conflictDates.join('\n')}`); 
                 resetBtn(btn); 
                 return; 
             }
 
-            const newBookings = dateArray.map((date, index) => ({
+            const newPeminjamans = dateArray.map((date, index) => ({
                 id: Date.now().toString() + index, 
                 name: isAdmin && isBlock ? "DIBLOKIR ADMIN" : name,
                 divisi: isAdmin && isBlock ? "-" : divisi,
@@ -439,17 +439,17 @@
                 date: date, 
                 start: start, 
                 end: end,
-                type: isAdmin && isBlock ? 'block' : 'booking'
+                type: isAdmin && isBlock ? 'block' : 'Peminjaman'
             }));
 
-            bookings.push(...newBookings);
-            bookings.sort((a, b) => new Date(a.date) - new Date(b.date));
+            Peminjamans.push(...newPeminjamans);
+            Peminjamans.sort((a, b) => new Date(a.date) - new Date(b.date));
             
             updateCalendar();
-            renderBookingList();
+            renderPeminjamanList();
             
             try {
-                await Promise.all(newBookings.map(b => saveBookingToDatabase(b)));
+                await Promise.all(newPeminjamans.map(b => savePeminjamanToDatabase(b)));
             } catch(e) {
                 console.error("Gagal menyimpan beberapa data:", e);
             }
@@ -466,28 +466,28 @@
                 isBlock
             );
 
-            alert(isAdmin && isBlock ? "Tanggal berhasil diblokir!" : "Booking Berhasil!");
-            document.getElementById('bookingForm').reset();
+            alert(isAdmin && isBlock ? "Tanggal berhasil diblokir!" : "Peminjaman Berhasil!");
+            document.getElementById('PeminjamanForm').reset();
             filterKaryawanByDivisi(); 
             resetBtn(btn);
         }
 
-        function resetBtn(btn) { btn.innerHTML = "Konfirmasi Booking"; btn.disabled = false; }
+        function resetBtn(btn) { btn.innerHTML = "Konfirmasi Peminjaman"; btn.disabled = false; }
 
-        async function deleteBooking(id) {
-            if(!confirm("Hapus booking ini?")) return;
-            bookings = bookings.filter(b => b.id != id);
+        async function deletePeminjaman(id) {
+            if(!confirm("Hapus Peminjaman ini?")) return;
+            Peminjamans = Peminjamans.filter(b => b.id != id);
             updateCalendar();
-            renderBookingList();
-            await deleteBookingFromDatabase(id);
+            renderPeminjamanList();
+            await deletePeminjamanFromDatabase(id);
         }
 
-        function renderBookingList() {
-            const list = document.getElementById('bookingList');
+        function renderPeminjamanList() {
+            const list = document.getElementById('PeminjamanList');
             const search = document.getElementById('searchBook').value.toLowerCase();
-            const countSpan = document.getElementById('totalBookings');
+            const countSpan = document.getElementById('totalPeminjamans');
             list.innerHTML = "";
-            const filtered = bookings.filter(b => b.name.toLowerCase().includes(search));
+            const filtered = Peminjamans.filter(b => b.name.toLowerCase().includes(search));
             countSpan.innerText = filtered.length;
 
             if (filtered.length === 0) {
@@ -501,7 +501,7 @@
                     <div class="p-3 rounded shadow-sm ${cardColor} relative group text-sm border ${isBlock ? 'border-gray-900' : 'border-gray-100'}">
                         <div class="font-bold flex justify-between items-start">
                             <span>${b.name} ${isBlock ? '' : `<span class="text-[10px] font-normal text-gray-500 ml-1">(${b.divisi || '-'})</span>`}</span>
-                            ${isAdmin ? `<button onclick="deleteBooking('${b.id}')" class="text-red-500 hover:text-red-700 bg-white rounded-full w-6 h-6 flex justify-center items-center shadow-sm ml-2"><i class="fas fa-trash"></i></button>` : ''}
+                            ${isAdmin ? `<button onclick="deletePeminjaman('${b.id}')" class="text-red-500 hover:text-red-700 bg-white rounded-full w-6 h-6 flex justify-center items-center shadow-sm ml-2"><i class="fas fa-trash"></i></button>` : ''}
                         </div>
                         <div class="text-xs mt-1 opacity-80"><i class="fas fa-car mr-1 text-blue-400"></i> ${b.car}</div>
                         <div class="text-xs mt-1 opacity-80 flex flex-col md:flex-row md:justify-between gap-1">
@@ -529,12 +529,12 @@
                 document.getElementById('authBtn').classList.replace('bg-red-600', 'bg-blue-600');
                 document.getElementById('adminControls').classList.add('hidden');
             }
-            renderBookingList();
+            renderPeminjamanList();
         }
 
         function sendWhatsAppNotification(name, divisi, waNumber, car, dateText, start, end, isBlock) {
             const adminWa = "085803993511"; 
-            const message = `🚗 *Notifikasi Peminjaman Mobil* 🚗\n\n*Nama Peminjam:* ${name}\n*Divisi:* ${divisi}\n*No. WA Peminjam:* ${waNumber || '-'}\n*Mobil:* ${car}\n*Tanggal:* ${dateText}\n*Waktu:* ${start} - ${end}\n\n` + (isBlock ? `⚠️ *Status: TANGGAL DIBLOKIR ADMIN*` : `✅ *Status: Booking Berhasil Dicatat*`);
+            const message = `🚗 *Notifikasi Peminjaman Mobil* 🚗\n\n*Nama Peminjam:* ${name}\n*Divisi:* ${divisi}\n*No. WA Peminjam:* ${waNumber || '-'}\n*Mobil:* ${car}\n*Tanggal:* ${dateText}\n*Waktu:* ${start} - ${end}\n\n` + (isBlock ? `⚠️ *Status: TANGGAL DIBLOKIR ADMIN*` : `✅ *Status: Peminjaman Berhasil Dicatat*`);
             let targetNumber = adminWa.replace(/\D/g, ''); 
             if (targetNumber.startsWith('0')) targetNumber = '62' + targetNumber.substring(1);
             
