@@ -366,7 +366,6 @@
                     bgClass = "bg-yellow-50 text-yellow-700 hover:bg-yellow-100"; borderClass = "border-yellow-300";
                 }
 
-                // PERBAIKAN: Menggunakan window.selectDate agar fungsi pasti dipanggil
                 calendarGrid.innerHTML += `
                     <div onclick="window.selectDate('${dateStr}')" class="h-10 md:h-14 flex flex-col justify-center items-center rounded cursor-pointer border ${borderClass} ${bgClass} transition text-xs md:text-sm relative">
                         <span>${i}</span>
@@ -376,7 +375,6 @@
             }
         }
 
-        // PERBAIKAN TOTAL: Menempelkan fungsi langsung ke window agar terbaca secara global
         window.selectDate = function(date) {
             try {
                 selectedDateForPeminjaman = date;
@@ -402,7 +400,8 @@
                         
                         let waLinkHtml = "-";
                         if (b.wa && b.wa !== "-") {
-                            let targetWa = b.wa.replace(/\D/g, '');
+                            // FIX: Menambahkan String(b.wa) agar tidak error saat tipe datanya berupa Number
+                            let targetWa = String(b.wa).replace(/\D/g, ''); 
                             if (targetWa.startsWith('0')) targetWa = '62' + targetWa.substring(1);
                             waLinkHtml = `<a href="https://wa.me/${targetWa}" target="_blank" class="text-green-600 hover:text-green-800 underline font-semibold flex items-center gap-1"><i class="fab fa-whatsapp text-lg"></i> ${b.wa}</a>`;
                         }
@@ -424,7 +423,6 @@
                     });
                 }
                 
-                // BUKA POP UP DENGAN DISPLAY FLEX
                 document.getElementById('PeminjamanModal').style.display = 'flex';
                 
             } catch (error) {
@@ -513,7 +511,6 @@
             if(isAdmin && isBlock) {
                 executePeminjaman();
             } else {
-                // Tampilkan form persetujuan
                 document.getElementById('agreementModal').style.display = 'flex';
             }
         }
@@ -713,7 +710,7 @@
         function sendWhatsAppNotification(name, divisi, waNumber, car, dateText, start, end, isBlock, tujuan) {
             const adminWa = "0881081371012"; 
             const message = `🚗 *Notifikasi Peminjaman Mobil* 🚗\n\n*Nama Peminjam:* ${name}\n*Divisi:* ${divisi}\n*No. WA Peminjam:* ${waNumber || '-'}\n*Tujuan:* ${tujuan || '-'}\n*Mobil:* ${car}\n*Tanggal:* ${dateText}\n*Waktu:* ${start} - ${end}\n\n` + (isBlock ? `⚠️ *Status: TANGGAL DIBLOKIR ADMIN*` : `✅ *Status: Peminjaman Berhasil Dicatat*`);
-            let targetNumber = adminWa.replace(/\D/g, ''); 
+            let targetNumber = String(adminWa).replace(/\D/g, ''); 
             if (targetNumber.startsWith('0')) targetNumber = '62' + targetNumber.substring(1);
             
             setTimeout(() => {
