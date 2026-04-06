@@ -201,6 +201,13 @@
     <script>
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzsEqesmX1KQ6IXLAtjzZ46Cyc2eu4zJIQCnhGcCpJlujPbG7RbH3r-JznHIZR6IJbV/exec'; 
 
+        // Database Warna Mobil Otomatis
+        const carDetails = {
+            "Hyundai - B 1201 DZQ": "Merah",
+            "Hyundai - B 1219 DZQ": "Abu",
+            "Honda - L 1903 JR": "Putih"
+        };
+
         let isAdmin = false;
         let Peminjamans = [];
         let dataKaryawan = [];
@@ -421,9 +428,9 @@
                         const isBlock = b.type === 'block';
                         const cardColor = isBlock ? "bg-gray-800 text-gray-200 border-gray-900" : "bg-white border-l-4 border-blue-500 text-gray-700 shadow-sm";
                         
+                        // Konfigurasi Link WA
                         let waLinkHtml = "-";
                         if (b.wa && b.wa !== "-") {
-                            // LOGIKA PERBAIKAN NOMOR WA YANG HILANG AWALAN 0-NYA
                             let targetWa = String(b.wa).replace(/\D/g, ''); 
                             if (targetWa.startsWith('0')) {
                                 targetWa = '62' + targetWa.substring(1);
@@ -433,6 +440,10 @@
                             waLinkHtml = `<a href="https://wa.me/${targetWa}" target="_blank" class="text-green-600 hover:text-green-800 underline font-semibold flex items-center gap-1"><i class="fab fa-whatsapp text-lg"></i> ${b.wa}</a>`;
                         }
 
+                        // Mengambil Label Warna Mobil
+                        let warnaLabel = carDetails[b.car] ? `<span class="bg-gray-200 text-gray-700 px-2 py-0.5 rounded text-[10px] ml-1 border border-gray-300">${carDetails[b.car]}</span>` : "";
+
+                        // Menampilkan Konten Pop-Up dengan Warna Mobil dan Link WA
                         modalContent.innerHTML += `
                             <div class="p-4 rounded-lg border ${cardColor} text-sm">
                                 <div class="font-bold text-base mb-2 flex justify-between items-start border-b pb-2">
@@ -440,7 +451,7 @@
                                     ${isBlock ? '<span class="text-xs bg-red-600 text-white px-2 py-1 rounded">Blokir</span>' : ''}
                                 </div>
                                 <div class="space-y-2 opacity-90 text-xs text-gray-800">
-                                    <div class="flex items-center gap-2"><i class="fas fa-car text-blue-500 w-4 text-center"></i> <span class="font-semibold">${b.car}</span></div>
+                                    <div class="flex items-center gap-2"><i class="fas fa-car text-blue-500 w-4 text-center"></i> <span class="font-semibold flex items-center">${b.car}${warnaLabel}</span></div>
                                     <div class="flex items-center gap-2"><i class="far fa-clock text-orange-500 w-4 text-center"></i> <span>Jam: ${b.start} - ${b.end} WIB</span></div>
                                     ${!isBlock ? `<div class="flex items-start gap-2 mt-1"><i class="fas fa-bullseye text-purple-500 w-4 text-center mt-0.5"></i> <span>Tujuan: <b>${b.tujuan}</b></span></div>` : ''}
                                     ${!isBlock ? `<div class="flex items-center gap-2 mt-2 pt-2 border-t border-gray-200">${waLinkHtml}</div>` : ''}
@@ -705,15 +716,32 @@
                 const isBlock = b.type === 'block';
                 const cardColor = isBlock ? "bg-gray-800 text-gray-200" : "bg-white border-l-4 border-blue-500 text-gray-700";
                 
+                // Konfigurasi Link WA untuk di List Kanan
+                let waLinkHtml = "-";
+                if (b.wa && b.wa !== "-") {
+                    let targetWa = String(b.wa).replace(/\D/g, ''); 
+                    if (targetWa.startsWith('0')) {
+                        targetWa = '62' + targetWa.substring(1);
+                    } else if (targetWa.startsWith('8')) {
+                        targetWa = '62' + targetWa;
+                    }
+                    waLinkHtml = `<a href="https://wa.me/${targetWa}" target="_blank" class="text-green-600 hover:text-green-800 underline font-semibold flex items-center gap-1"><i class="fab fa-whatsapp text-lg"></i> ${b.wa}</a>`;
+                }
+
+                // Mengambil Label Warna Mobil
+                let warnaLabel = carDetails[b.car] ? `<span class="bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded text-[10px] ml-1 border border-gray-300">${carDetails[b.car]}</span>` : "";
+
+                // HTML List Sidebar
                 list.innerHTML += `
                     <div class="p-3 rounded shadow-sm ${cardColor} relative group text-sm border ${isBlock ? 'border-gray-900' : 'border-gray-100'}">
                         <div class="font-bold flex justify-between items-start">
                             <span>${b.name} ${isBlock ? '' : `<span class="text-[10px] font-normal text-gray-500 ml-1">(${b.divisi || '-'})</span>`}</span>
                             ${isAdmin ? `<button onclick="deletePeminjaman('${b.id}')" class="text-red-500 hover:text-red-700 bg-white rounded-full w-6 h-6 flex justify-center items-center shadow-sm ml-2"><i class="fas fa-trash"></i></button>` : ''}
                         </div>
-                        <div class="text-xs mt-2 opacity-100 text-gray-800 space-y-1">
-                            <div><i class="fas fa-car w-4 text-center text-blue-500"></i> ${b.car}</div>
-                            ${!isBlock ? `<div><i class="fas fa-bullseye w-4 text-center text-purple-500"></i> Tujuan: <b>${b.tujuan}</b></div>` : ''}
+                        <div class="text-xs mt-2 opacity-100 text-gray-800 space-y-1.5">
+                            <div class="flex items-center"><i class="fas fa-car w-5 text-center text-blue-500"></i> <span class="flex items-center">${b.car}${warnaLabel}</span></div>
+                            ${!isBlock ? `<div class="flex items-start"><i class="fas fa-bullseye w-5 text-center text-purple-500 mt-0.5"></i> <span>Tujuan: <b>${b.tujuan}</b></span></div>` : ''}
+                            ${!isBlock && b.wa && b.wa !== "-" ? `<div class="flex items-center mt-1 border-t border-gray-100 pt-1.5">${waLinkHtml}</div>` : ''}
                         </div>
                         <div class="text-xs mt-2 pt-2 border-t border-gray-100 opacity-80 flex flex-col md:flex-row md:justify-between gap-1">
                             <span><i class="far fa-calendar mr-1"></i> ${b.date}</span>
@@ -747,7 +775,6 @@
             const adminWa = "0881081371012"; 
             const message = `🚗 *Notifikasi Peminjaman Mobil* 🚗\n\n*Nama Peminjam:* ${name}\n*Divisi:* ${divisi}\n*No. WA Peminjam:* ${waNumber || '-'}\n*Tujuan:* ${tujuan || '-'}\n*Mobil:* ${car}\n*Tanggal:* ${dateText}\n*Waktu:* ${start} - ${end}\n\n` + (isBlock ? `⚠️ *Status: TANGGAL DIBLOKIR ADMIN*` : `✅ *Status: Peminjaman Berhasil Dicatat*`);
             
-            // Perbaikan serupa di bagian notifikasi
             let targetNumber = String(adminWa).replace(/\D/g, ''); 
             if (targetNumber.startsWith('0')) {
                 targetNumber = '62' + targetNumber.substring(1);
