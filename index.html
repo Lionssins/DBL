@@ -199,7 +199,6 @@
     </div>
 
     <script>
-        // Gunakan URL Database Asli Anda
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzsEqesmX1KQ6IXLAtjzZ46Cyc2eu4zJIQCnhGcCpJlujPbG7RbH3r-JznHIZR6IJbV/exec'; 
 
         let isAdmin = false;
@@ -263,7 +262,6 @@
                 let rawPeminjamans = parsedData.Peminjamans || parsedData.bookings || [];
 
                 Peminjamans = rawPeminjamans.map(b => {
-                    // PENCARIAN CERDAS: Mencari kolom Tujuan / Keperluan apapun namanya
                     let keyTujuan = Object.keys(b).find(k => 
                         k.toLowerCase().includes('tujuan') || 
                         k.toLowerCase().includes('keterang') || 
@@ -272,7 +270,6 @@
                     );
                     let textTujuan = keyTujuan ? b[keyTujuan] : "-";
                     
-                    // PENCARIAN CERDAS: Mencari kolom WA
                     let keyWa = Object.keys(b).find(k => k.toLowerCase() === 'wa' || k.toLowerCase().includes('whatsapp') || k.toLowerCase().includes('telepon'));
                     let noWa = keyWa ? String(b[keyWa]) : "-";
 
@@ -288,18 +285,14 @@
 
                 dataKaryawan = parsedData.karyawan || [];
                 
-                // MENGATASI MASALAH DIVISI HILANG DENGAN CARA FLEKSIBEL
                 let rawDivisi = parsedData.divisi || [];
                 if (rawDivisi.length > 0 && typeof rawDivisi[0] === 'object') {
-                    // Jika data divisi berbentuk tabel/objek, ambil nilainya saja
                     rawDivisi = rawDivisi.map(d => Object.values(d)[0]);
                 }
-                // Jika data divisi masih kosong, kita cari manual dari daftar karyawan
                 if (rawDivisi.length === 0 && dataKaryawan.length > 0) {
                     rawDivisi = dataKaryawan.map(k => k.divisi || k.Divisi || Object.values(k)[1]);
                 }
                 
-                // Buang duplikat dan pastikan bersih
                 let uniqueDivisi = [...new Set(rawDivisi)].filter(Boolean);
                 
                 populateDropdown('empDivisi', uniqueDivisi, '-- Pilih Divisi --');
@@ -410,7 +403,8 @@
         window.selectDate = function(date) {
             try {
                 selectedDateForPeminjaman = date;
-                const dayPeminjamans = Peminjamans.filter(b => b.date === date);
+                // Urutkan pop-up berdasarkan waktu (Jam)
+                const dayPeminjamans = Peminjamans.filter(b => b.date === date).sort((a, b) => a.start.localeCompare(b.start));
                 const dateObj = new Date(date);
                 const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
                 
@@ -437,7 +431,7 @@
                             waLinkHtml = `<a href="https://wa.me/${targetWa}" target="_blank" class="text-green-600 hover:text-green-800 underline font-semibold flex items-center gap-1"><i class="fab fa-whatsapp text-lg"></i> ${b.wa}</a>`;
                         }
 
-                        // Menampilkan Tujuan di Pop-Up dengan Jelas
+                        // Menampilkan Tujuan di Pop-Up
                         modalContent.innerHTML += `
                             <div class="p-4 rounded-lg border ${cardColor} text-sm">
                                 <div class="font-bold text-base mb-2 flex justify-between items-start border-b pb-2">
@@ -571,8 +565,8 @@
             }));
 
             Peminjamans.push(...newPeminjamans);
-            Peminjamans.sort((a, b) => new Date(a.date) - new Date(b.date));
             
+            // Re-render UI
             updateCalendar();
             renderPeminjamanList();
             
@@ -693,8 +687,16 @@
             const search = document.getElementById('searchBook').value.toLowerCase();
             const countSpan = document.getElementById('totalPeminjamans');
             list.innerHTML = "";
-            const filtered = Peminjamans.filter(b => b.name.toLowerCase().includes(search));
+            
+            let filtered = Peminjamans.filter(b => b.name.toLowerCase().includes(search));
             countSpan.innerText = filtered.length;
+
+            // PENGURUTAN BERDASARKAN TANGGAL DAN WAKTU (Dari yang paling awal)
+            filtered.sort((a, b) => {
+                let dateA = new Date(a.date + "T" + (a.start || "00:00"));
+                let dateB = new Date(b.date + "T" + (b.start || "00:00"));
+                return dateA - dateB;
+            });
 
             if (filtered.length === 0) {
                 list.innerHTML = `<div class="text-center text-gray-400 mt-10">Tidak ada data</div>`; return;
@@ -704,7 +706,7 @@
                 const isBlock = b.type === 'block';
                 const cardColor = isBlock ? "bg-gray-800 text-gray-200" : "bg-white border-l-4 border-blue-500 text-gray-700";
                 
-                // Menampilkan Tujuan di Daftar Sebelah Kanan dengan Jelas
+                // Menampilkan Tujuan di Daftar Sebelah Kanan
                 list.innerHTML += `
                     <div class="p-3 rounded shadow-sm ${cardColor} relative group text-sm border ${isBlock ? 'border-gray-900' : 'border-gray-100'}">
                         <div class="font-bold flex justify-between items-start">
