@@ -115,4 +115,433 @@
                         </label>
                     </div>
 
-                    <button type="submit" class="w-full bg-blue-700 hover:bg-blue-800 text-white font-bold py-3 rounded-lg shadow transition
+                    <button type="submit" class="w-full bg-blue-700 hover:bg-blue-800 text-white font-bold py-3 rounded-lg shadow transition transform active:scale-95">
+                        Konfirmasi Booking
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <div class="lg:col-span-1">
+            <div class="bg-white p-4 rounded-xl shadow-md sticky top-24 h-[85vh] flex flex-col">
+                <h3 class="text-lg font-bold border-b pb-2 mb-2 flex justify-between items-center">
+                    <span><i class="fas fa-list-ul text-blue-500 mr-2"></i>Daftar Booking</span>
+                    <span class="text-xs bg-gray-200 px-2 py-1 rounded-full" id="totalBookings">0</span>
+                </h3>
+                <div class="mb-2">
+                    <input type="text" id="searchBook" onkeyup="renderBookingList()" placeholder="Cari nama..." class="w-full text-sm p-2 border rounded">
+                </div>
+                <div id="bookingList" class="flex-1 overflow-y-auto space-y-3 pr-2">
+                    <div class="text-center text-gray-400 mt-10">Belum ada booking</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="bookingModal" class="hidden fixed inset-0 bg-black bg-opacity-60 z-[100] flex justify-center items-center p-4 backdrop-blur-sm transition-opacity">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col max-h-[85vh]">
+            <div class="bg-blue-800 text-white p-4 flex justify-between items-center shadow-md">
+                <h3 class="font-bold text-lg" id="modalTitle">Detail Booking</h3>
+                <button onclick="closeModal()" class="text-white hover:text-red-300 font-bold text-2xl leading-none">&times;</button>
+            </div>
+            <div id="modalContent" class="p-5 overflow-y-auto flex-1 space-y-3 bg-gray-50"></div>
+            <div class="p-4 border-t bg-white flex justify-end gap-2">
+                <button onclick="closeModal()" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold px-4 py-2 rounded-lg shadow-sm">Tutup</button>
+                <button onclick="goToBookingForm()" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-lg shadow-sm flex items-center gap-2">
+                    <i class="far fa-calendar-check"></i> Booking Disini
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzsEqesmX1KQ6IXLAtjzZ46Cyc2eu4zJIQCnhGcCpJlujPbG7RbH3r-JznHIZR6IJbV/exec'; 
+
+        let isAdmin = false;
+        let bookings = [];
+        let dataKaryawan = [];
+        const today = new Date();
+        let currentMonth = today.getMonth();
+        let currentYear = today.getFullYear();
+        let selectedDateForBooking = "";
+
+        document.addEventListener('DOMContentLoaded', () => {
+            setupYearSelect();
+            document.getElementById('monthSelect').value = currentMonth;
+            document.getElementById('calendarGrid').innerHTML = "<div class='col-span-7 text-center py-4 text-blue-600 font-bold'><i class='fas fa-spinner fa-spin'></i> Menghubungkan ke Database...</div>";
+            fetchBookings();
+        });
+
+        // --- FUNGSI PARSING AMAN (TIDAK AKAN CRASH DI PERANGKAT APAPUN) ---
+        function formatDisplayDate(val) {
+            try {
+                if (!val) return "-";
+                let d = new Date(val);
+                if (isNaN(d.getTime())) return String(val).split('T')[0];
+                const yyyy = d.getFullYear();
+                const mm = String(d.getMonth() + 1).padStart(2, '0');
+                const dd = String(d.getDate()).padStart(2, '0');
+                return `${yyyy}-${mm}-${dd}`;
+            } catch(e) { return val; }
+        }
+
+        function formatDisplayTime(val) {
+            try {
+                if (!val) return "-";
+                // Tangani format Google Sheets ISO
+                if (typeof val === 'string' && val.includes('T')) {
+                    let d = new Date(val);
+                    if (!isNaN(d.getTime())) {
+                        let hrs = String(d.getHours()).padStart(2, '0');
+                        let mins = String(d.getMinutes()).padStart(2, '0');
+                        return `${hrs}:${mins}`;
+                    }
+                }
+                // Tangani format string jam biasa (08:00:00)
+                if (typeof val === 'string' && val.includes(':')) {
+                    const parts = val.split(':');
+                    return `${parts[0]}:${parts[1]}`;
+                }
+                return val;
+            } catch(e) { return val; }
+        }
+
+        async function fetchBookings() {
+            try {
+                const response = await fetch(SCRIPT_URL);
+                const textData = await response.text();
+                
+                if (textData.trim().startsWith('<')) {
+                    document.getElementById('calendarGrid').innerHTML = `<div class='col-span-7 text-center py-4 text-red-600 font-bold border border-red-200 bg-red-50 rounded p-2'>⚠️ Akses Ditolak/URL Salah</div>`;
+                    return;
+                }
+                
+                const parsedData = JSON.parse(textData);
+                let rawBookings = parsedData.bookings || [];
+
+                bookings = rawBookings.map(b => ({
+                    ...b,
+                    date: formatDisplayDate(b.date),
+                    start: formatDisplayTime(b.start),
+                    end: formatDisplayTime(b.end)
+                }));
+
+                dataKaryawan = parsedData.karyawan || [];
+                
+                populateDropdown('empDivisi', parsedData.divisi || [], '-- Pilih Divisi --');
+                document.getElementById('empName').innerHTML = `<option value="" disabled selected>-- Pilih Divisi Terlebih Dahulu --</option>`;
+
+                updateCalendar();
+                renderBookingList();
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('calendarGrid').innerHTML = `<div class='col-span-7 text-center py-4 text-red-600 font-bold bg-red-50 rounded'>❌ Gagal menarik data: ${error.message}</div>`;
+            }
+        }
+
+        function populateDropdown(elementId, dataArray, defaultText) {
+            const select = document.getElementById(elementId);
+            if(!select) return;
+            select.innerHTML = `<option value="" disabled selected>${defaultText}</option>`;
+            dataArray.forEach(item => {
+                select.innerHTML += `<option value="${item}">${item}</option>`;
+            });
+        }
+
+        function filterKaryawanByDivisi() {
+            const selectedDivisi = document.getElementById('empDivisi').value;
+            const nameSelect = document.getElementById('empName');
+            nameSelect.innerHTML = `<option value="" disabled selected>-- Pilih Nama --</option>`;
+            
+            const filteredKaryawan = dataKaryawan.filter(k => k.divisi === selectedDivisi);
+            
+            if (filteredKaryawan.length === 0) {
+                nameSelect.innerHTML = `<option value="" disabled selected>-- Tidak ada data --</option>`;
+                return;
+            }
+            filteredKaryawan.forEach(k => {
+                nameSelect.innerHTML += `<option value="${k.nama}">${k.nama}</option>`;
+            });
+        }
+
+        async function saveBookingToDatabase(bookingData) {
+            try {
+                await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: 'add', ...bookingData })
+                });
+            } catch (error) { console.error('Error saving:', error); }
+        }
+
+        async function deleteBookingFromDatabase(id) {
+            try {
+                await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: 'delete', id: id })
+                });
+            } catch (error) { console.error('Error deleting:', error); }
+        }
+
+        function setupYearSelect() {
+            const select = document.getElementById('yearSelect');
+            if(!select) return;
+            select.innerHTML = "";
+            for (let i = currentYear - 1; i <= currentYear + 3; i++) {
+                let opt = document.createElement('option');
+                opt.value = i; opt.innerHTML = i;
+                if(i === currentYear) opt.selected = true;
+                select.appendChild(opt);
+            }
+        }
+
+        function updateCalendar() {
+            const ySelect = document.getElementById('yearSelect');
+            if(ySelect.value) currentYear = parseInt(ySelect.value);
+            currentMonth = parseInt(document.getElementById('monthSelect').value);
+            
+            const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+            const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+            const calendarGrid = document.getElementById('calendarGrid');
+            calendarGrid.innerHTML = "";
+
+            for (let i = 0; i < firstDay; i++) calendarGrid.innerHTML += `<div></div>`;
+
+            for (let i = 1; i <= daysInMonth; i++) {
+                const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
+                const dayBookings = bookings.filter(b => b.date === dateStr);
+                
+                let bgClass = "bg-green-50 hover:bg-green-100 text-gray-700";
+                let borderClass = "border-gray-200";
+                
+                if (dayBookings.some(b => b.type === 'block')) {
+                    bgClass = "bg-gray-800 text-white hover:bg-gray-700"; borderClass = "border-gray-800";
+                } else if (dayBookings.length >= 3) {
+                    bgClass = "bg-red-100 text-red-700 font-bold hover:bg-red-200"; borderClass = "border-red-300";
+                } else if (dayBookings.length > 0) {
+                    bgClass = "bg-yellow-50 text-yellow-700 hover:bg-yellow-100"; borderClass = "border-yellow-300";
+                }
+
+                calendarGrid.innerHTML += `
+                    <div onclick="selectDate('${dateStr}')" class="h-10 md:h-14 flex flex-col justify-center items-center rounded cursor-pointer border ${borderClass} ${bgClass} transition text-xs md:text-sm relative">
+                        <span>${i}</span>
+                        ${dayBookings.length > 0 && !dayBookings.some(b => b.type === 'block') ? `<span class="hidden md:block text-[9px] mt-1">${dayBookings.length} Booked</span>` : ''}
+                    </div>
+                `;
+            }
+        }
+
+        function selectDate(date) {
+            selectedDateForBooking = date;
+            const dayBookings = bookings.filter(b => b.date === date);
+            const dateObj = new Date(date);
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            document.getElementById('modalTitle').innerText = dateObj.toLocaleDateString('id-ID', options);
+            
+            const modalContent = document.getElementById('modalContent');
+            modalContent.innerHTML = "";
+            
+            if (dayBookings.length === 0) {
+                modalContent.innerHTML = `<div class="text-center text-gray-400 py-10 flex flex-col items-center"><i class="far fa-calendar-times text-4xl mb-3 text-gray-300"></i><p>Belum ada jadwal</p></div>`;
+            } else {
+                dayBookings.forEach(b => {
+                    const isBlock = b.type === 'block';
+                    const cardColor = isBlock ? "bg-gray-800 text-gray-200 border-gray-900" : "bg-white border-l-4 border-blue-500 text-gray-700 shadow-sm";
+                    
+                    modalContent.innerHTML += `
+                        <div class="p-4 rounded-lg border ${cardColor} text-sm">
+                            <div class="font-bold text-base mb-1 flex justify-between items-start">
+                                <span>${b.name} <span class="text-xs font-normal text-gray-400 ml-1">${isBlock ? '' : `(${b.divisi || '-'})`}</span></span>
+                                ${isBlock ? '<span class="text-xs bg-red-600 text-white px-2 py-1 rounded">Blokir</span>' : ''}
+                            </div>
+                            <div class="flex items-center gap-2 text-xs mt-2 opacity-90"><i class="fas fa-car text-blue-500 w-4 text-center"></i> ${b.car}</div>
+                            <div class="flex items-center gap-2 text-xs mt-1 opacity-90"><i class="far fa-clock text-orange-500 w-4 text-center"></i> ${b.start} - ${b.end}</div>
+                        </div>
+                    `;
+                });
+            }
+            document.getElementById('bookingModal').classList.remove('hidden');
+        }
+
+        function closeModal() { document.getElementById('bookingModal').classList.add('hidden'); }
+
+        function goToBookingForm() {
+            closeModal();
+            document.getElementById('startDate').value = selectedDateForBooking;
+            document.getElementById('endDate').value = ""; 
+            window.scrollTo({ top: document.querySelector('#bookingForm').offsetTop - 100, behavior: 'smooth' });
+        }
+
+        async function handleBooking(e) {
+            e.preventDefault();
+            const btn = e.target.querySelector('button[type="submit"]');
+            btn.innerHTML = "<i class='fas fa-spinner fa-spin'></i> Memproses...";
+            btn.disabled = true;
+
+            const name = document.getElementById('empName').value;
+            const divisi = document.getElementById('empDivisi').value;
+            const empWa = document.getElementById('empWa').value;
+            const car = document.getElementById('carSelect').value;
+            const startDateStr = document.getElementById('startDate').value;
+            const endDateStr = document.getElementById('endDate').value;
+            const start = document.getElementById('startTime').value;
+            const end = document.getElementById('endTime').value;
+            const isBlock = !document.getElementById('adminControls').classList.contains('hidden') ? document.getElementById('isBlock').checked : false;
+
+            if (start >= end) { 
+                alert("Jam selesai harus lebih akhir dari jam mulai!"); 
+                resetBtn(btn); 
+                return; 
+            }
+
+            const startDate = new Date(startDateStr);
+            const endDate = endDateStr ? new Date(endDateStr) : new Date(startDateStr);
+            const dateArray = [];
+
+            if (endDate < startDate) {
+                alert("Tanggal Akhir tidak boleh lebih awal dari Tanggal Mulai!");
+                resetBtn(btn);
+                return;
+            }
+
+            let loopDate = new Date(startDate);
+            while (loopDate <= endDate) {
+                const yyyy = loopDate.getFullYear();
+                const mm = String(loopDate.getMonth() + 1).padStart(2, '0');
+                const dd = String(loopDate.getDate()).padStart(2, '0');
+                dateArray.push(`${yyyy}-${mm}-${dd}`);
+                
+                loopDate.setDate(loopDate.getDate() + 1);
+            }
+
+            let hasConflict = false;
+            let conflictDates = [];
+
+            for (const date of dateArray) {
+                const conflict = bookings.find(b => b.date === date && b.car === car && ((start >= b.start && start < b.end) || (end > b.start && end <= b.end)));
+                if (conflict && !isAdmin) {
+                    hasConflict = true;
+                    conflictDates.push(date);
+                }
+            }
+
+            if (hasConflict) { 
+                alert(`Mobil sudah dibooking pada jam tersebut di tanggal: \n${conflictDates.join('\n')}`); 
+                resetBtn(btn); 
+                return; 
+            }
+
+            const newBookings = dateArray.map((date, index) => ({
+                id: Date.now().toString() + index, 
+                name: isAdmin && isBlock ? "DIBLOKIR ADMIN" : name,
+                divisi: isAdmin && isBlock ? "-" : divisi,
+                wa: empWa || "-",
+                car: isAdmin && isBlock ? "ALL CARS" : car,
+                date: date, 
+                start: start, 
+                end: end,
+                type: isAdmin && isBlock ? 'block' : 'booking'
+            }));
+
+            bookings.push(...newBookings);
+            bookings.sort((a, b) => new Date(a.date) - new Date(b.date));
+            
+            updateCalendar();
+            renderBookingList();
+            
+            try {
+                await Promise.all(newBookings.map(b => saveBookingToDatabase(b)));
+            } catch(e) {
+                console.error("Gagal menyimpan beberapa data:", e);
+            }
+
+            const waDateText = dateArray.length > 1 ? `${dateArray[0]} s/d ${dateArray[dateArray.length-1]}` : dateArray[0];
+            sendWhatsAppNotification(
+                isAdmin && isBlock ? "ADMIN" : name, 
+                isAdmin && isBlock ? "-" : divisi, 
+                empWa, 
+                isAdmin && isBlock ? "ALL CARS" : car, 
+                waDateText, 
+                start, 
+                end, 
+                isBlock
+            );
+
+            alert(isAdmin && isBlock ? "Tanggal berhasil diblokir!" : "Booking Berhasil!");
+            document.getElementById('bookingForm').reset();
+            filterKaryawanByDivisi(); 
+            resetBtn(btn);
+        }
+
+        function resetBtn(btn) { btn.innerHTML = "Konfirmasi Booking"; btn.disabled = false; }
+
+        async function deleteBooking(id) {
+            if(!confirm("Hapus booking ini?")) return;
+            bookings = bookings.filter(b => b.id != id);
+            updateCalendar();
+            renderBookingList();
+            await deleteBookingFromDatabase(id);
+        }
+
+        function renderBookingList() {
+            const list = document.getElementById('bookingList');
+            const search = document.getElementById('searchBook').value.toLowerCase();
+            const countSpan = document.getElementById('totalBookings');
+            list.innerHTML = "";
+            const filtered = bookings.filter(b => b.name.toLowerCase().includes(search));
+            countSpan.innerText = filtered.length;
+
+            if (filtered.length === 0) {
+                list.innerHTML = `<div class="text-center text-gray-400 mt-10">Tidak ada data</div>`; return;
+            }
+
+            filtered.forEach(b => {
+                const isBlock = b.type === 'block';
+                const cardColor = isBlock ? "bg-gray-800 text-gray-200" : "bg-white border-l-4 border-blue-500 text-gray-700";
+                list.innerHTML += `
+                    <div class="p-3 rounded shadow-sm ${cardColor} relative group text-sm border ${isBlock ? 'border-gray-900' : 'border-gray-100'}">
+                        <div class="font-bold flex justify-between items-start">
+                            <span>${b.name} ${isBlock ? '' : `<span class="text-[10px] font-normal text-gray-500 ml-1">(${b.divisi || '-'})</span>`}</span>
+                            ${isAdmin ? `<button onclick="deleteBooking('${b.id}')" class="text-red-500 hover:text-red-700 bg-white rounded-full w-6 h-6 flex justify-center items-center shadow-sm ml-2"><i class="fas fa-trash"></i></button>` : ''}
+                        </div>
+                        <div class="text-xs mt-1 opacity-80"><i class="fas fa-car mr-1 text-blue-400"></i> ${b.car}</div>
+                        <div class="text-xs mt-1 opacity-80 flex flex-col md:flex-row md:justify-between gap-1">
+                            <span><i class="far fa-calendar mr-1"></i> ${b.date}</span>
+                            <span><i class="far fa-clock mr-1"></i> ${b.start} - ${b.end}</span>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function toggleAdminMode() {
+            if (!isAdmin) {
+                const pass = prompt("Masukkan Password Admin:");
+                if (pass === "admin123") {
+                    isAdmin = true;
+                    document.getElementById('authBtn').innerHTML = `<i class="fas fa-sign-out-alt"></i> Logout`;
+                    document.getElementById('authBtn').classList.replace('bg-blue-600', 'bg-red-600');
+                    document.getElementById('adminControls').classList.remove('hidden');
+                    alert("Login Admin Berhasil!");
+                } else { alert("Password Salah!"); }
+            } else {
+                isAdmin = false;
+                document.getElementById('authBtn').innerHTML = `<i class="fas fa-user-shield"></i> Login Admin`;
+                document.getElementById('authBtn').classList.replace('bg-red-600', 'bg-blue-600');
+                document.getElementById('adminControls').classList.add('hidden');
+            }
+            renderBookingList();
+        }
+
+        function sendWhatsAppNotification(name, divisi, waNumber, car, dateText, start, end, isBlock) {
+            const adminWa = "085803993511"; 
+            const message = `🚗 *Notifikasi Car Booking* 🚗\n\n*Nama Peminjam:* ${name}\n*Divisi:* ${divisi}\n*No. WA Peminjam:* ${waNumber || '-'}\n*Mobil:* ${car}\n*Tanggal:* ${dateText}\n*Waktu:* ${start} - ${end}\n\n` + (isBlock ? `⚠️ *Status: TANGGAL DIBLOKIR ADMIN*` : `✅ *Status: Booking Berhasil Dicatat*`);
+            let targetNumber = adminWa.replace(/\D/g, ''); 
+            if (targetNumber.startsWith('0')) targetNumber = '62' + targetNumber.substring(1);
+            
+            setTimeout(() => {
+                window.open(`https://wa.me/${targetNumber}?text=${encodeURIComponent(message)}`, '_blank');
+            }, 500);
+        }
+    </script>
+</body>
+</html>
