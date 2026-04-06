@@ -172,7 +172,6 @@
             fetchPeminjamans();
         });
 
-        // --- FUNGSI PARSING AMAN (TIDAK AKAN CRASH DI PERANGKAT APAPUN) ---
         function formatDisplayDate(val) {
             try {
                 if (!val) return "-";
@@ -188,7 +187,6 @@
         function formatDisplayTime(val) {
             try {
                 if (!val) return "-";
-                // Tangani format Google Sheets ISO
                 if (typeof val === 'string' && val.includes('T')) {
                     let d = new Date(val);
                     if (!isNaN(d.getTime())) {
@@ -197,7 +195,6 @@
                         return `${hrs}:${mins}`;
                     }
                 }
-                // Tangani format string jam biasa (08:00:00)
                 if (typeof val === 'string' && val.includes(':')) {
                     const parts = val.split(':');
                     return `${parts[0]}:${parts[1]}`;
@@ -217,7 +214,7 @@
                 }
                 
                 const parsedData = JSON.parse(textData);
-                let rawPeminjamans = parsedData.Peminjamans || [];
+                let rawPeminjamans = parsedData.Peminjamans || parsedData.bookings || []; // fallback jika di backend namanya bookings
 
                 Peminjamans = rawPeminjamans.map(b => ({
                     ...b,
@@ -264,10 +261,12 @@
             });
         }
 
+        // PERBAIKAN: Menambahkan text/plain agar Google Script tidak memblokir POST Request
         async function savePeminjamanToDatabase(PeminjamanData) {
             try {
                 await fetch(SCRIPT_URL, {
                     method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                     body: JSON.stringify({ action: 'add', ...PeminjamanData })
                 });
             } catch (error) { console.error('Error saving:', error); }
@@ -277,6 +276,7 @@
             try {
                 await fetch(SCRIPT_URL, {
                     method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                     body: JSON.stringify({ action: 'delete', id: id })
                 });
             } catch (error) { console.error('Error deleting:', error); }
@@ -416,8 +416,14 @@
             let hasConflict = false;
             let conflictDates = [];
 
+            // PERBAIKAN: Logika pengecekan jam bentrok yang 100% akurat
             for (const date of dateArray) {
-                const conflict = Peminjamans.find(b => b.date === date && b.car === car && ((start >= b.start && start < b.end) || (end > b.start && end <= b.end)));
+                const conflict = Peminjamans.find(b => 
+                    b.date === date && 
+                    b.car === car && 
+                    (start < b.end && end > b.start) // Rumus valid waktu overlap
+                );
+                
                 if (conflict && !isAdmin) {
                     hasConflict = true;
                     conflictDates.push(date);
@@ -425,7 +431,7 @@
             }
 
             if (hasConflict) { 
-                alert(`Mobil sudah diPeminjaman pada jam tersebut di tanggal: \n${conflictDates.join('\n')}`); 
+                alert(`Mobil sudah dipinjam pada jam tersebut di tanggal: \n${conflictDates.join('\n')}`); 
                 resetBtn(btn); 
                 return; 
             }
@@ -442,14 +448,18 @@
                 type: isAdmin && isBlock ? 'block' : 'Peminjaman'
             }));
 
+            // Langsung update di tampilan lokal
             Peminjamans.push(...newPeminjamans);
             Peminjamans.sort((a, b) => new Date(a.date) - new Date(b.date));
             
             updateCalendar();
             renderPeminjamanList();
             
+            // Simpan ke database tanpa menghentikan UI
             try {
                 await Promise.all(newPeminjamans.map(b => savePeminjamanToDatabase(b)));
+                // Opsional: Tarik ulang data selang 3 detik untuk memastikan sinkron 100% dengan DB
+                setTimeout(() => { fetchPeminjamans(); }, 3000);
             } catch(e) {
                 console.error("Gagal menyimpan beberapa data:", e);
             }
