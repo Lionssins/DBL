@@ -199,7 +199,6 @@
     </div>
 
     <script>
-        // GANTI DENGAN URL DEPLOYMENT ANDA YANG BARU
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzsEqesmX1KQ6IXLAtjzZ46Cyc2eu4zJIQCnhGcCpJlujPbG7RbH3r-JznHIZR6IJbV/exec'; 
 
         let isAdmin = false;
@@ -263,13 +262,19 @@
                 let rawPeminjamans = parsedData.Peminjamans || parsedData.bookings || [];
 
                 Peminjamans = rawPeminjamans.map(b => {
-                    let textTujuan = b.tujuan || "-";
-                    let noWa = b.wa ? String(b.wa) : "-";
-                    let namaKaryawan = b.name || b.nama || "-";
+                    let keyTujuan = Object.keys(b).find(k => 
+                        k.toLowerCase().includes('tujuan') || 
+                        k.toLowerCase().includes('keterang') || 
+                        k.toLowerCase().includes('keperluan') || 
+                        k.toLowerCase().includes('purpose')
+                    );
+                    let textTujuan = keyTujuan ? b[keyTujuan] : "-";
+                    
+                    let keyWa = Object.keys(b).find(k => k.toLowerCase() === 'wa' || k.toLowerCase().includes('whatsapp') || k.toLowerCase().includes('telepon'));
+                    let noWa = keyWa ? String(b[keyWa]) : "-";
 
                     return {
                         ...b,
-                        name: namaKaryawan,
                         tujuan: textTujuan,
                         wa: noWa,
                         date: formatDisplayDate(b.date),
@@ -280,7 +285,6 @@
 
                 dataKaryawan = parsedData.karyawan || [];
                 
-                // Cek isi data Karyawan untuk dropdown
                 let rawDivisi = dataKaryawan.map(k => k.divisi || k.Divisi || Object.values(k)[1]);
                 let uniqueDivisi = [...new Set(rawDivisi)].filter(Boolean);
                 
@@ -397,7 +401,6 @@
         window.selectDate = function(date) {
             try {
                 selectedDateForPeminjaman = date;
-                // Mengurutkan di Pop-Up Kalender berdasarkan waktu mulai
                 const dayPeminjamans = Peminjamans.filter(b => b.date === date).sort((a, b) => a.start.localeCompare(b.start));
                 const dateObj = new Date(date);
                 const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
@@ -420,12 +423,16 @@
                         
                         let waLinkHtml = "-";
                         if (b.wa && b.wa !== "-") {
+                            // LOGIKA PERBAIKAN NOMOR WA YANG HILANG AWALAN 0-NYA
                             let targetWa = String(b.wa).replace(/\D/g, ''); 
-                            if (targetWa.startsWith('0')) targetWa = '62' + targetWa.substring(1);
+                            if (targetWa.startsWith('0')) {
+                                targetWa = '62' + targetWa.substring(1);
+                            } else if (targetWa.startsWith('8')) {
+                                targetWa = '62' + targetWa;
+                            }
                             waLinkHtml = `<a href="https://wa.me/${targetWa}" target="_blank" class="text-green-600 hover:text-green-800 underline font-semibold flex items-center gap-1"><i class="fab fa-whatsapp text-lg"></i> ${b.wa}</a>`;
                         }
 
-                        // Menampilkan Tujuan di Pop-up
                         modalContent.innerHTML += `
                             <div class="p-4 rounded-lg border ${cardColor} text-sm">
                                 <div class="font-bold text-base mb-2 flex justify-between items-start border-b pb-2">
@@ -559,7 +566,6 @@
             }));
 
             Peminjamans.push(...newPeminjamans);
-            Peminjamans.sort((a, b) => new Date(a.date) - new Date(b.date));
             
             updateCalendar();
             renderPeminjamanList();
@@ -685,7 +691,6 @@
             let filtered = Peminjamans.filter(b => b.name.toLowerCase().includes(search));
             countSpan.innerText = filtered.length;
 
-            // Mengurutkan di Daftar Kanan berdasarkan Tanggal dan Waktu
             filtered.sort((a, b) => {
                 let dateA = new Date(a.date + "T" + (a.start || "00:00"));
                 let dateB = new Date(b.date + "T" + (b.start || "00:00"));
@@ -700,7 +705,6 @@
                 const isBlock = b.type === 'block';
                 const cardColor = isBlock ? "bg-gray-800 text-gray-200" : "bg-white border-l-4 border-blue-500 text-gray-700";
                 
-                // Menampilkan Tujuan di List Sebelah Kanan
                 list.innerHTML += `
                     <div class="p-3 rounded shadow-sm ${cardColor} relative group text-sm border ${isBlock ? 'border-gray-900' : 'border-gray-100'}">
                         <div class="font-bold flex justify-between items-start">
@@ -742,8 +746,14 @@
         function sendWhatsAppNotification(name, divisi, waNumber, car, dateText, start, end, isBlock, tujuan) {
             const adminWa = "0881081371012"; 
             const message = `🚗 *Notifikasi Peminjaman Mobil* 🚗\n\n*Nama Peminjam:* ${name}\n*Divisi:* ${divisi}\n*No. WA Peminjam:* ${waNumber || '-'}\n*Tujuan:* ${tujuan || '-'}\n*Mobil:* ${car}\n*Tanggal:* ${dateText}\n*Waktu:* ${start} - ${end}\n\n` + (isBlock ? `⚠️ *Status: TANGGAL DIBLOKIR ADMIN*` : `✅ *Status: Peminjaman Berhasil Dicatat*`);
+            
+            // Perbaikan serupa di bagian notifikasi
             let targetNumber = String(adminWa).replace(/\D/g, ''); 
-            if (targetNumber.startsWith('0')) targetNumber = '62' + targetNumber.substring(1);
+            if (targetNumber.startsWith('0')) {
+                targetNumber = '62' + targetNumber.substring(1);
+            } else if (targetNumber.startsWith('8')) {
+                targetNumber = '62' + targetNumber;
+            }
             
             setTimeout(() => {
                 window.open(`https://wa.me/${targetNumber}?text=${encodeURIComponent(message)}`, '_blank');
