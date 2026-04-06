@@ -533,7 +533,7 @@
         }
 
         function sendWhatsAppNotification(name, divisi, waNumber, car, dateText, start, end, isBlock) {
-            const adminWa = "085803993511"; 
+            const adminWa = "0881081371012"; 
             const message = `🚗 *Notifikasi Peminjaman Mobil* 🚗\n\n*Nama Peminjam:* ${name}\n*Divisi:* ${divisi}\n*No. WA Peminjam:* ${waNumber || '-'}\n*Mobil:* ${car}\n*Tanggal:* ${dateText}\n*Waktu:* ${start} - ${end}\n\n` + (isBlock ? `⚠️ *Status: TANGGAL DIBLOKIR ADMIN*` : `✅ *Status: Peminjaman Berhasil Dicatat*`);
             let targetNumber = adminWa.replace(/\D/g, ''); 
             if (targetNumber.startsWith('0')) targetNumber = '62' + targetNumber.substring(1);
