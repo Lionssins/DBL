@@ -52,8 +52,8 @@
                 
                 <div class="mt-4 flex gap-4 text-xs justify-center">
                     <span class="flex items-center gap-1"><div class="w-3 h-3 bg-green-100 border border-green-500 rounded"></div> Tersedia</span>
+                    <span class="flex items-center gap-1"><div class="w-3 h-3 bg-yellow-100 border border-yellow-500 rounded"></div> Sebagian Dipinjam</span>
                     <span class="flex items-center gap-1"><div class="w-3 h-3 bg-red-100 border border-red-500 rounded"></div> Penuh</span>
-                    <span class="flex items-center gap-1"><div class="w-3 h-3 bg-gray-800 rounded"></div> Diblokir</span>
                 </div>
             </div>
 
@@ -66,23 +66,23 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Divisi</label>
-                            <select id="empDivisi" required onchange="filterKaryawanByDivisi()" class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+                            <select id="empDivisi" required onchange="filterKaryawanByDivisi()" class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none bg-white req-field">
                                 <option value="" disabled selected>-- Memuat Data... --</option>
                             </select>
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Nama Peminjam</label>
-                            <select id="empName" required class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+                            <select id="empName" required class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none bg-white req-field">
                                 <option value="" disabled selected>-- Pilih Divisi Terlebih Dahulu --</option>
                             </select>
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">No. WhatsApp</label>
-                            <input type="tel" id="empWa" required class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Contoh: 08123456789">
+                            <input type="tel" id="empWa" required class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none req-field" placeholder="Contoh: 08123456789">
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Pilih Mobil</label>
-                            <select id="carSelect" class="w-full border rounded-lg p-2 bg-white focus:ring-2 focus:ring-blue-500 outline-none">
+                            <select id="carSelect" required class="w-full border rounded-lg p-2 bg-white focus:ring-2 focus:ring-blue-500 outline-none">
                                 <option value="Hyundai - B 1201 DZQ">Hyundai Stargazer (Merah)</option>
                                 <option value="Hyundai - B 1219 DZQ">Hyundai Stargazer (Abu)</option>
                                 <option value="Honda - L 1903 JR">Honda BRV (Putih)</option>
@@ -92,32 +92,33 @@
 
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Tujuan Peminjaman</label>
-                        <input type="text" id="tujuanPinjam" required class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Contoh: Kunjungan ke Klien X / Mengambil Barang">
+                        <input type="text" id="tujuanPinjam" required class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none req-field" placeholder="Contoh: Kunjungan ke Klien X / Mengambil Barang">
                     </div>
                     
                     <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Tanggal Mulai</label>
-                            <input type="date" id="startDate" required class="w-full border rounded-lg p-2">
+                            <input type="date" id="startDate" required class="w-full border rounded-lg p-2" onchange="checkAvailability()">
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Tanggal Akhir <span class="text-xs text-gray-400">(Opsional)</span></label>
-                            <input type="date" id="endDate" class="w-full border rounded-lg p-2">
+                            <input type="date" id="endDate" class="w-full border rounded-lg p-2" onchange="checkAvailability()">
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Jam Mulai</label>
-                            <input type="time" id="startTime" required class="w-full border rounded-lg p-2">
+                            <input type="time" id="startTime" required class="w-full border rounded-lg p-2 req-field">
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Jam Selesai</label>
-                            <input type="time" id="endTime" required class="w-full border rounded-lg p-2">
+                            <input type="time" id="endTime" required class="w-full border rounded-lg p-2 req-field">
                         </div>
                     </div>
 
                     <div id="adminControls" class="hidden p-3 bg-red-50 border border-red-200 rounded text-sm text-red-700">
-                        <label class="flex items-center gap-2">
-                            <input type="checkbox" id="isBlock" class="w-4 h-4 text-red-600"> Mode Blokir Tanggal (Admin)
+                        <label class="flex items-center gap-2 font-bold cursor-pointer">
+                            <input type="checkbox" id="isBlock" class="w-4 h-4 text-red-600"> Mode Blokir Mobil Spesifik (Admin)
                         </label>
+                        <p class="text-xs text-red-500 mt-1">*Akan memblokir mobil yang dipilih pada dropdown di atas dari peminjam (00:00 - 23:59).</p>
                     </div>
 
                     <button type="submit" class="w-full bg-blue-700 hover:bg-blue-800 text-white font-bold py-3 rounded-lg shadow transition transform active:scale-95">
@@ -201,11 +202,16 @@
     <script>
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzsEqesmX1KQ6IXLAtjzZ46Cyc2eu4zJIQCnhGcCpJlujPbG7RbH3r-JznHIZR6IJbV/exec'; 
 
-        // Database Warna Mobil Otomatis
         const carDetails = {
             "Hyundai - B 1201 DZQ": "Merah",
             "Hyundai - B 1219 DZQ": "Abu",
             "Honda - L 1903 JR": "Putih"
+        };
+
+        const originalCarTexts = {
+            "Hyundai - B 1201 DZQ": "Hyundai Stargazer (Merah)",
+            "Hyundai - B 1219 DZQ": "Hyundai Stargazer (Abu)",
+            "Honda - L 1903 JR": "Honda BRV (Putih)"
         };
 
         let isAdmin = false;
@@ -215,7 +221,6 @@
         let currentMonth = today.getMonth();
         let currentYear = today.getFullYear();
         let selectedDateForPeminjaman = "";
-
         let tempBookingData = null;
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -223,8 +228,20 @@
             document.getElementById('monthSelect').value = currentMonth;
             document.getElementById('calendarGrid').innerHTML = "<div class='col-span-7 text-center py-4 text-blue-600 font-bold'><i class='fas fa-spinner fa-spin'></i> Menghubungkan ke Database...</div>";
             fetchPeminjamans();
+
+            // Toggle required fields if admin triggers block mode
+            document.getElementById('isBlock').addEventListener('change', function() {
+                const reqFields = document.querySelectorAll('.req-field');
+                const isChecked = this.checked;
+                reqFields.forEach(el => { el.required = !isChecked; });
+                if(isChecked) {
+                    document.getElementById('startTime').value = "00:00";
+                    document.getElementById('endTime').value = "23:59";
+                }
+            });
         });
 
+        // Format Date Time Logic (Same as yours)
         function formatDisplayDate(val) {
             try {
                 if (!val) return "-";
@@ -261,9 +278,7 @@
                 const response = await fetch(SCRIPT_URL);
                 const textData = await response.text();
                 
-                if (textData.trim().startsWith('<')) {
-                    throw new Error("URL Script salah, butuh login, atau akses diblokir.");
-                }
+                if (textData.trim().startsWith('<')) throw new Error("URL Script salah, butuh login, atau akses diblokir.");
                 
                 const parsedData = JSON.parse(textData);
                 let rawPeminjamans = parsedData.Peminjamans || parsedData.bookings || [];
@@ -276,7 +291,6 @@
                         k.toLowerCase().includes('purpose')
                     );
                     let textTujuan = keyTujuan ? b[keyTujuan] : "-";
-                    
                     let keyWa = Object.keys(b).find(k => k.toLowerCase() === 'wa' || k.toLowerCase().includes('whatsapp') || k.toLowerCase().includes('telepon'));
                     let noWa = keyWa ? String(b[keyWa]) : "-";
 
@@ -291,7 +305,6 @@
                 });
 
                 dataKaryawan = parsedData.karyawan || [];
-                
                 let rawDivisi = dataKaryawan.map(k => k.divisi || k.Divisi || Object.values(k)[1]);
                 let uniqueDivisi = [...new Set(rawDivisi)].filter(Boolean);
                 
@@ -300,14 +313,44 @@
                 } else {
                     document.getElementById('empDivisi').innerHTML = `<option value="Divisi Kosong">Database Karyawan Kosong</option>`;
                 }
-                
                 document.getElementById('empName').innerHTML = `<option value="" disabled selected>-- Pilih Divisi Terlebih Dahulu --</option>`;
 
                 updateCalendar();
                 renderPeminjamanList();
+                checkAvailability(); // Cek jika ada isian form yang tertahan
             } catch (error) {
                 console.error('Error:', error);
                 document.getElementById('calendarGrid').innerHTML = `<div class='col-span-7 text-center py-4 text-red-600 font-bold bg-red-50 border border-red-200 rounded p-2'>❌ Gagal menarik data. Cek Apps Script Anda.</div>`;
+            }
+        }
+
+        // NEW FUNCTION: Dinonaktifkan (Disable) pilihan jika mobil sedang diblokir di tanggal tersebut
+        function checkAvailability() {
+            const dateStr = document.getElementById('startDate').value;
+            if (!dateStr) return;
+
+            const carSelect = document.getElementById('carSelect');
+
+            for(let i = 0; i < carSelect.options.length; i++) {
+                const carVal = carSelect.options[i].value;
+                if(!originalCarTexts[carVal]) continue;
+
+                // Cek apakah mobil ini diblokir pada tanggal tersebut
+                const isBlocked = Peminjamans.some(b => b.date === dateStr && b.car === carVal && b.type === 'block');
+                
+                if(isBlocked) {
+                    carSelect.options[i].disabled = true;
+                    carSelect.options[i].text = originalCarTexts[carVal] + " - ❌ DIBLOKIR ADMIN";
+                } else {
+                    carSelect.options[i].disabled = false;
+                    carSelect.options[i].text = originalCarTexts[carVal];
+                }
+            }
+
+            // Auto switch ke mobil yang tersedia jika mobil saat ini ter-disable
+            if(carSelect.options[carSelect.selectedIndex] && carSelect.options[carSelect.selectedIndex].disabled) {
+                let availableOption = Array.from(carSelect.options).find(opt => !opt.disabled);
+                if (availableOption) carSelect.value = availableOption.value;
             }
         }
 
@@ -315,9 +358,7 @@
             const select = document.getElementById(elementId);
             if(!select) return;
             select.innerHTML = `<option value="" disabled selected>${defaultText}</option>`;
-            dataArray.forEach(item => {
-                select.innerHTML += `<option value="${item}">${item}</option>`;
-            });
+            dataArray.forEach(item => { select.innerHTML += `<option value="${item}">${item}</option>`; });
         }
 
         function filterKaryawanByDivisi() {
@@ -326,7 +367,6 @@
             nameSelect.innerHTML = `<option value="" disabled selected>-- Pilih Nama --</option>`;
             
             const filteredKaryawan = dataKaryawan.filter(k => (k.divisi || k.Divisi || Object.values(k)[1]) === selectedDivisi);
-            
             if (filteredKaryawan.length === 0) {
                 nameSelect.innerHTML = `<option value="Manual Input">Manual Input</option>`;
                 return;
@@ -388,9 +428,9 @@
                 let bgClass = "bg-green-50 hover:bg-green-100 text-gray-700";
                 let borderClass = "border-gray-200";
                 
-                if (dayPeminjamans.some(b => b.type === 'block')) {
-                    bgClass = "bg-gray-800 text-white hover:bg-gray-700"; borderClass = "border-gray-800";
-                } else if (dayPeminjamans.length >= 3) {
+                // MENGHAPUS LOGIKA BLOKIR WARNA HITAM
+                // Jika mobil dipinjam / diblok, hanya terhitung sebagai kuota terpakai
+                if (dayPeminjamans.length >= 3) {
                     bgClass = "bg-red-100 text-red-700 font-bold hover:bg-red-200"; borderClass = "border-red-300";
                 } else if (dayPeminjamans.length > 0) {
                     bgClass = "bg-yellow-50 text-yellow-700 hover:bg-yellow-100"; borderClass = "border-yellow-300";
@@ -399,7 +439,7 @@
                 calendarGrid.innerHTML += `
                     <div onclick="window.selectDate('${dateStr}')" class="h-10 md:h-14 flex flex-col justify-center items-center rounded cursor-pointer border ${borderClass} ${bgClass} transition text-xs md:text-sm relative">
                         <span>${i}</span>
-                        ${dayPeminjamans.length > 0 && !dayPeminjamans.some(b => b.type === 'block') ? `<span class="hidden md:block text-[9px] mt-1">${dayPeminjamans.length} Booked</span>` : ''}
+                        ${dayPeminjamans.length > 0 ? `<span class="hidden md:block text-[9px] mt-1">${dayPeminjamans.length} Booked</span>` : ''}
                     </div>
                 `;
             }
@@ -426,31 +466,26 @@
                 } else {
                     dayPeminjamans.forEach(b => {
                         const isBlock = b.type === 'block';
+                        // Modal tetap men-styling pemblokiran admin agar terlihat berbeda (ini bebas)
                         const cardColor = isBlock ? "bg-gray-800 text-gray-200 border-gray-900" : "bg-white border-l-4 border-blue-500 text-gray-700 shadow-sm";
                         
-                        // Konfigurasi Link WA
                         let waLinkHtml = "-";
                         if (b.wa && b.wa !== "-") {
                             let targetWa = String(b.wa).replace(/\D/g, ''); 
-                            if (targetWa.startsWith('0')) {
-                                targetWa = '62' + targetWa.substring(1);
-                            } else if (targetWa.startsWith('8')) {
-                                targetWa = '62' + targetWa;
-                            }
+                            if (targetWa.startsWith('0')) { targetWa = '62' + targetWa.substring(1); } 
+                            else if (targetWa.startsWith('8')) { targetWa = '62' + targetWa; }
                             waLinkHtml = `<a href="https://wa.me/${targetWa}" target="_blank" class="text-green-600 hover:text-green-800 underline font-semibold flex items-center gap-1"><i class="fab fa-whatsapp text-lg"></i> ${b.wa}</a>`;
                         }
 
-                        // Mengambil Label Warna Mobil
                         let warnaLabel = carDetails[b.car] ? `<span class="bg-gray-200 text-gray-700 px-2 py-0.5 rounded text-[10px] ml-1 border border-gray-300">${carDetails[b.car]}</span>` : "";
 
-                        // Menampilkan Konten Pop-Up dengan Warna Mobil dan Link WA
                         modalContent.innerHTML += `
                             <div class="p-4 rounded-lg border ${cardColor} text-sm">
                                 <div class="font-bold text-base mb-2 flex justify-between items-start border-b pb-2">
                                     <span>${b.name} <span class="text-xs font-normal text-gray-400 ml-1">${isBlock ? '' : `(${b.divisi || '-'})`}</span></span>
-                                    ${isBlock ? '<span class="text-xs bg-red-600 text-white px-2 py-1 rounded">Blokir</span>' : ''}
+                                    ${isBlock ? '<span class="text-xs bg-red-600 text-white px-2 py-1 rounded">Blokir Admin</span>' : ''}
                                 </div>
-                                <div class="space-y-2 opacity-90 text-xs text-gray-800">
+                                <div class="space-y-2 opacity-90 text-xs ${isBlock ? 'text-gray-200' : 'text-gray-800'}">
                                     <div class="flex items-center gap-2"><i class="fas fa-car text-blue-500 w-4 text-center"></i> <span class="font-semibold flex items-center">${b.car}${warnaLabel}</span></div>
                                     <div class="flex items-center gap-2"><i class="far fa-clock text-orange-500 w-4 text-center"></i> <span>Jam: ${b.start} - ${b.end} WIB</span></div>
                                     ${!isBlock ? `<div class="flex items-start gap-2 mt-1"><i class="fas fa-bullseye text-purple-500 w-4 text-center mt-0.5"></i> <span>Tujuan: <b>${b.tujuan}</b></span></div>` : ''}
@@ -460,9 +495,7 @@
                         `;
                     });
                 }
-                
                 document.getElementById('PeminjamanModal').style.display = 'flex';
-                
             } catch (error) {
                 console.error("Gagal membuka pop-up:", error);
                 alert("Maaf, terjadi kesalahan saat membaca tanggal.");
@@ -477,6 +510,7 @@
             window.closeModal();
             document.getElementById('startDate').value = selectedDateForPeminjaman;
             document.getElementById('endDate').value = ""; 
+            checkAvailability(); // Memastikan pengecekan availability berjalan saat navigasi
             window.scrollTo({ top: document.querySelector('#PeminjamanForm').offsetTop - 100, behavior: 'smooth' });
         };
 
@@ -489,16 +523,23 @@
             e.preventDefault();
             const btn = e.target.querySelector('button[type="submit"]');
 
-            const name = document.getElementById('empName').value;
-            const divisi = document.getElementById('empDivisi').value;
-            const empWa = document.getElementById('empWa').value;
+            const name = document.getElementById('empName').value || "-";
+            const divisi = document.getElementById('empDivisi').value || "-";
+            const empWa = document.getElementById('empWa').value || "-";
             const car = document.getElementById('carSelect').value;
-            const tujuan = document.getElementById('tujuanPinjam').value;
+            const tujuan = document.getElementById('tujuanPinjam').value || "-";
             const startDateStr = document.getElementById('startDate').value;
             const endDateStr = document.getElementById('endDate').value;
-            const start = document.getElementById('startTime').value;
-            const end = document.getElementById('endTime').value;
+            let start = document.getElementById('startTime').value;
+            let end = document.getElementById('endTime').value;
+            
             const isBlock = !document.getElementById('adminControls').classList.contains('hidden') ? document.getElementById('isBlock').checked : false;
+
+            if (isBlock) {
+                // Paksa pemblokiran full-day
+                start = "00:00";
+                end = "23:59";
+            }
 
             if (start >= end) { 
                 alert("Jam selesai harus lebih akhir dari jam mulai!"); 
@@ -535,12 +576,16 @@
                 
                 if (conflict && !isAdmin) {
                     hasConflict = true;
-                    conflictDates.push(date);
+                    if(conflict.type === 'block') {
+                        conflictDates.push(`${date} (Status: DIBLOKIR ADMIN)`);
+                    } else {
+                        conflictDates.push(`${date} (${conflict.start} - ${conflict.end})`);
+                    }
                 }
             }
 
             if (hasConflict) { 
-                alert(`Mobil sudah dipinjam pada jam tersebut di tanggal: \n${conflictDates.join('\n')}`); 
+                alert(`Mobil tidak dapat dipinjam pada jadwal tersebut:\n${conflictDates.join('\n')}`); 
                 return; 
             }
 
@@ -567,9 +612,9 @@
                 id: Date.now().toString() + index, 
                 name: isAdmin && isBlock ? "DIBLOKIR ADMIN" : name,
                 divisi: isAdmin && isBlock ? "-" : divisi,
-                wa: empWa || "-",
-                car: isAdmin && isBlock ? "ALL CARS" : car,
-                tujuan: isAdmin && isBlock ? "-" : tujuan,
+                wa: isAdmin && isBlock ? "-" : empWa,
+                car: car, // <-- HANYA memblokir mobil yang dipilih saja
+                tujuan: isAdmin && isBlock ? "Pemeliharaan / Diblokir" : tujuan,
                 date: date, 
                 start: start, 
                 end: end,
@@ -580,6 +625,7 @@
             
             updateCalendar();
             renderPeminjamanList();
+            checkAvailability(); 
             
             try {
                 await Promise.all(newPeminjamans.map(b => savePeminjamanToDatabase(b)));
@@ -593,7 +639,7 @@
                 isAdmin && isBlock ? "ADMIN" : name, 
                 isAdmin && isBlock ? "-" : divisi, 
                 empWa, 
-                isAdmin && isBlock ? "ALL CARS" : car, 
+                car, 
                 waDateText, 
                 start, 
                 end, 
@@ -601,7 +647,7 @@
                 isAdmin && isBlock ? "-" : tujuan
             );
 
-            alert(isAdmin && isBlock ? "Tanggal berhasil diblokir!" : "Peminjaman Berhasil Dicatat!");
+            alert(isAdmin && isBlock ? `Tipe Mobil ${car} berhasil diblokir!` : "Peminjaman Berhasil Dicatat!");
             document.getElementById('PeminjamanForm').reset();
             filterKaryawanByDivisi(); 
             resetBtn(btn);
@@ -672,11 +718,7 @@
                     </div>
                     
                     <script>
-                        window.onload = function() {
-                            setTimeout(function() {
-                                window.print();
-                            }, 500);
-                        }
+                        window.onload = function() { setTimeout(function() { window.print(); }, 500); }
                     <\/script>
                 </body>
                 </html>
@@ -690,6 +732,7 @@
             Peminjamans = Peminjamans.filter(b => b.id != id);
             updateCalendar();
             renderPeminjamanList();
+            checkAvailability();
             await deletePeminjamanFromDatabase(id);
         }
 
@@ -716,34 +759,28 @@
                 const isBlock = b.type === 'block';
                 const cardColor = isBlock ? "bg-gray-800 text-gray-200" : "bg-white border-l-4 border-blue-500 text-gray-700";
                 
-                // Konfigurasi Link WA untuk di List Kanan
                 let waLinkHtml = "-";
                 if (b.wa && b.wa !== "-") {
                     let targetWa = String(b.wa).replace(/\D/g, ''); 
-                    if (targetWa.startsWith('0')) {
-                        targetWa = '62' + targetWa.substring(1);
-                    } else if (targetWa.startsWith('8')) {
-                        targetWa = '62' + targetWa;
-                    }
+                    if (targetWa.startsWith('0')) { targetWa = '62' + targetWa.substring(1); } 
+                    else if (targetWa.startsWith('8')) { targetWa = '62' + targetWa; }
                     waLinkHtml = `<a href="https://wa.me/${targetWa}" target="_blank" class="text-green-600 hover:text-green-800 underline font-semibold flex items-center gap-1"><i class="fab fa-whatsapp text-lg"></i> ${b.wa}</a>`;
                 }
 
-                // Mengambil Label Warna Mobil
                 let warnaLabel = carDetails[b.car] ? `<span class="bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded text-[10px] ml-1 border border-gray-300">${carDetails[b.car]}</span>` : "";
 
-                // HTML List Sidebar
                 list.innerHTML += `
                     <div class="p-3 rounded shadow-sm ${cardColor} relative group text-sm border ${isBlock ? 'border-gray-900' : 'border-gray-100'}">
                         <div class="font-bold flex justify-between items-start">
                             <span>${b.name} ${isBlock ? '' : `<span class="text-[10px] font-normal text-gray-500 ml-1">(${b.divisi || '-'})</span>`}</span>
                             ${isAdmin ? `<button onclick="deletePeminjaman('${b.id}')" class="text-red-500 hover:text-red-700 bg-white rounded-full w-6 h-6 flex justify-center items-center shadow-sm ml-2"><i class="fas fa-trash"></i></button>` : ''}
                         </div>
-                        <div class="text-xs mt-2 opacity-100 text-gray-800 space-y-1.5">
+                        <div class="text-xs mt-2 opacity-100 ${isBlock ? 'text-gray-200' : 'text-gray-800'} space-y-1.5">
                             <div class="flex items-center"><i class="fas fa-car w-5 text-center text-blue-500"></i> <span class="flex items-center">${b.car}${warnaLabel}</span></div>
                             ${!isBlock ? `<div class="flex items-start"><i class="fas fa-bullseye w-5 text-center text-purple-500 mt-0.5"></i> <span>Tujuan: <b>${b.tujuan}</b></span></div>` : ''}
                             ${!isBlock && b.wa && b.wa !== "-" ? `<div class="flex items-center mt-1 border-t border-gray-100 pt-1.5">${waLinkHtml}</div>` : ''}
                         </div>
-                        <div class="text-xs mt-2 pt-2 border-t border-gray-100 opacity-80 flex flex-col md:flex-row md:justify-between gap-1">
+                        <div class="text-xs mt-2 pt-2 border-t ${isBlock ? 'border-gray-700' : 'border-gray-100'} opacity-80 flex flex-col md:flex-row md:justify-between gap-1">
                             <span><i class="far fa-calendar mr-1"></i> ${b.date}</span>
                             <span><i class="far fa-clock mr-1"></i> ${b.start} - ${b.end} WIB</span>
                         </div>
@@ -767,20 +804,21 @@
                 document.getElementById('authBtn').innerHTML = `<i class="fas fa-user-shield"></i> Login Admin`;
                 document.getElementById('authBtn').classList.replace('bg-red-600', 'bg-blue-600');
                 document.getElementById('adminControls').classList.add('hidden');
+                
+                // Reset checkbox state saat logout
+                document.getElementById('isBlock').checked = false;
+                document.getElementById('isBlock').dispatchEvent(new Event('change'));
             }
             renderPeminjamanList();
         }
 
         function sendWhatsAppNotification(name, divisi, waNumber, car, dateText, start, end, isBlock, tujuan) {
             const adminWa = "0881081371012"; 
-            const message = `🚗 *Notifikasi Peminjaman Mobil* 🚗\n\n*Nama Peminjam:* ${name}\n*Divisi:* ${divisi}\n*No. WA Peminjam:* ${waNumber || '-'}\n*Tujuan:* ${tujuan || '-'}\n*Mobil:* ${car}\n*Tanggal:* ${dateText}\n*Waktu:* ${start} - ${end}\n\n` + (isBlock ? `⚠️ *Status: TANGGAL DIBLOKIR ADMIN*` : `✅ *Status: Peminjaman Berhasil Dicatat*`);
+            const message = `🚗 *Notifikasi Peminjaman Mobil* 🚗\n\n*Nama Peminjam:* ${name}\n*Divisi:* ${divisi}\n*No. WA Peminjam:* ${waNumber || '-'}\n*Tujuan:* ${tujuan || '-'}\n*Mobil:* ${car}\n*Tanggal:* ${dateText}\n*Waktu:* ${start} - ${end}\n\n` + (isBlock ? `⚠️ *Status: TIPE MOBIL TERSEBUT DIBLOKIR ADMIN*` : `✅ *Status: Peminjaman Berhasil Dicatat*`);
             
             let targetNumber = String(adminWa).replace(/\D/g, ''); 
-            if (targetNumber.startsWith('0')) {
-                targetNumber = '62' + targetNumber.substring(1);
-            } else if (targetNumber.startsWith('8')) {
-                targetNumber = '62' + targetNumber;
-            }
+            if (targetNumber.startsWith('0')) { targetNumber = '62' + targetNumber.substring(1); } 
+            else if (targetNumber.startsWith('8')) { targetNumber = '62' + targetNumber; }
             
             setTimeout(() => {
                 window.open(`https://wa.me/${targetNumber}?text=${encodeURIComponent(message)}`, '_blank');
